@@ -230,8 +230,15 @@ jQuery(function($){
             }
 
             //public method to add new item
-            $(this).bind("addItem", function(event, data){
-                addItem(data.title, data.value, 0, 0, 0);
+            $(this).bind("addItem", function(event, data){      
+                if ($.isArray(data)) {
+                    for (var i = 0 ; i<data.length; i++){
+                        addItem(data[i].title, data[i].value, 0, 0, 0);
+                    }
+                }  
+                else {
+                    addItem(data.title, data.value, 0, 0, 0);           
+                }                
             });
 
             function addItem(title, value, preadded, locked, focusme){
