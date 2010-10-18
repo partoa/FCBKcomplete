@@ -357,7 +357,7 @@ jQuery(function($){
                     var inp_val = input.val();
                     var etext = xssPrevent(inp_val == ''?options.default_search:inp_val);
 
-                    if (event.keyCode == 8 && etext.length == 0) {
+                    if (event.keyCode == 8 && etext == options.default_search) {
                         feed.hide();
                         browser_msie ? browser_msie_frame.hide() : '';
                         if (!holder.children("li.bit-box:last").hasClass('locked')) {
