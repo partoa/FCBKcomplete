@@ -464,7 +464,7 @@ jQuery(function($){
 
                 var myregexp, match;
                 try {
-                    myregexp = new RegExp('(?:^|;)\\s*(\\d+)\\s*:[^;]*?' + etext + '[^;]*' + filter, 'gi');
+                    myregexp = new RegExp('(?:^|;)\\s*(\\d+)\\s*:[^;]*?' + etext + '[^;]*', 'g' + filter);
                     match = myregexp.exec(search_string);
                 }
                 catch (ex) {
