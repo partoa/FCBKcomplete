@@ -1,10 +1,10 @@
 /*
  FCBKcomplete 2.7.5
  - Jquery version required: 1.2.x, 1.3.x, 1.4.x
- 
+
  Changelog:
  - 2.00	new version of fcbkcomplete
- 
+
  - 2.01 fixed bugs & added features
  		fixed filter bug for preadded items
 		focus on the input after selecting tag
@@ -12,17 +12,17 @@
 		input tag in the control has a border in IE7
 		added iterate over each match and apply the plugin separately
 		set focus on the input after selecting tag
- 
+
  - 2.02 fixed fist element selected bug
 		fixed defaultfilter error bug
- 
+
  - 2.5 	removed selected="selected" attribute due ie bug
 		element search algorithm changed
 		better performance fix added
 		fixed many small bugs
 		onselect event added
 		onremove event added
- 
+
  - 2.6 	ie6/7 support fix added
 		added new public method addItem due request
 		added new options "firstselected" that you can set true/false to select first element on dropdown list
@@ -30,7 +30,7 @@
 		removeItem bug fixed
 		and many more bug fixed
  		fixed public method to use it $("elem").trigger("addItem",[{"title": "test", "value": "test"}]);
-		
+
 - 2.7 	jquery 1.4 compability
  		item lock possability added by adding locked class to preadded option <option value="value" class="selected locked">text</option>
  		maximum item that can be added
@@ -40,17 +40,17 @@
 
 - 2.7.2 some minor bug fixed
 		minified version recompacted due some problems
-		
+
 - 2.7.3 event call fixed thanks to William Parry <williamparry!at!gmail.com>
 
 - 2.7.4 standart event change call added on addItem, removeItem
 		preSet also check if item have "selected" attribute
 		addItem minor fix
-		
+
 - 2.7.5 added options "choose_on_enter,choose_on_tab,choose_on_comma" to control what keys trigger selection
 		added option "keep_prompt_after_choose" to control if we stay selected/focused after choosing an option
-		added options "force_width" and "auto_width" to control width setting (if both are null || false, no width is set in JS) 
-		
+		added options "force_width" and "auto_width" to control width setting (if both are null || false, no width is set in JS)
+
  */
 /* Coded by: emposha <admin@emposha.com> */
 /* Copyright: Emposha.com <http://www.emposha.com/> - Distributed under MIT - Keep this message! */
@@ -76,11 +76,11 @@
  *                                                     so as to use less memory. Not like there will be much memory used up to begin with.
  * force_width                                  - Uses the width provided for the combo
  * auto_width                                   - Calculates width automatically for the combo
- * choose_on_comma                      - Makes a selection when the comma button is hit 
- * choose_on_tab                             - Makes a selection when the tab is hit 
- * choose_on_enter                          - Makes a selection when the enter is hit 
+ * choose_on_comma                      - Makes a selection when the comma button is hit
+ * choose_on_tab                             - Makes a selection when the tab is hit
+ * choose_on_enter                          - Makes a selection when the enter is hit
  * keep_prompt_after_choose            - keeps the combo box open even after selection
- * zIndex                                         - The z-index of the feed. 
+ * zIndex                                         - The z-index of the feed.
  */
 jQuery(function($){
     $.fn.fcbkcomplete = function(opt){
@@ -99,7 +99,7 @@ jQuery(function($){
                         elm_selected.push(val);
                     }
                     else if(!disable && pos > -1){
-                        elm_selected.splice(pos, 1);                    
+                        elm_selected.splice(pos, 1);
                     }
                 });
             }
@@ -137,15 +137,15 @@ jQuery(function($){
                 if (element.attr("name").indexOf("[]") == -1) {
                     element.attr("name", element.attr("name") + "[]");
                 }
-                
+
                 holder = $(document.createElement("ul"));
                 holder.attr("class", "holder");
                 element.after(holder);
-                
+
                 complete = $(document.createElement("div"));
                 complete.addClass("facebook-auto");
                 complete.append('<div class="default">' + options.complete_text + "</div>");
-                
+
                 if (browser_msie) {
                     complete.append('<iframe class="ie6fix" scrolling="no" frameborder="0"></iframe>');
                     browser_msie_frame = complete.children('.ie6fix');
@@ -159,7 +159,7 @@ jQuery(function($){
                     feed.css("width", options.width);
                 } else if (options.auto_width) {
                     feed.css("width", complete.width());
-                } 
+                }
             }
 
             function moveToTop(id){
@@ -182,7 +182,7 @@ jQuery(function($){
                     });
                 }
             }
-            
+
             function preSet(){
                 if(options.data && $.isArray(options.data)){
                     $.each(options.data, function(index, value){
@@ -204,7 +204,7 @@ jQuery(function($){
                         else {
                             option.removeAttr("selected");
                         }
-                    
+
                         cache.push({
                             caption: option.text(),
                             value: option.val()
@@ -218,7 +218,7 @@ jQuery(function($){
             $(this).bind("addItem", function(event, data){
                 addItem(data.title, data.value, 0, 0, 0);
             });
-            
+
             function addItem(title, value, preadded, locked, focusme){
                 if (!maxItems()) {
                     return false;
@@ -236,15 +236,15 @@ jQuery(function($){
                     "class": "closebutton",
                     "href": "#"
                 });
-                
+
                 li.appendChild(aclose);
                 holder.append(li);
-                
+
                 $(aclose).click(function(){
                     removeItem($(this).parent("li"));
                     return false;
                 });
-                
+
                 if (!preadded) {
                     li_annon.remove();
                     var _item;
@@ -279,7 +279,7 @@ jQuery(function($){
                 feed.hide();
                 browser_msie ? browser_msie_frame.hide() : '';
             }
-            
+
             function removeItem(item){
                 if (!item.hasClass('locked')) {
                     item.fadeOut("fast");
@@ -304,23 +304,23 @@ jQuery(function($){
                     deleting = 0;
                 }
             }
-            
+
             function addInput(focusme){
                 li_annon = $('<li class="bit-input" id="' + elemid + '_annoninput"><input type="text" class="maininput" size=1 /></li>');
                 var li = li_annon;
                 input = li.children(':first');
                 var getBoxTimeout = 0;
-				
+
                 holder.append(li);
-                
+
                 input.focus(function(){
                     complete.fadeIn("fast");
                 });
-                
+
                 input.blur(function(){
                     complete.fadeOut("fast");
                 });
-                
+
                 holder.click(function(){
                     fcbkPosition();
                     if (feed.length && (input.val().length || options.default_search.length)) {
@@ -336,15 +336,15 @@ jQuery(function($){
                         complete.children(".default").show();
                     }
                 });
-                
+
                 input.keypress(function(event){
                     if (event.keyCode == 13 || event.keyCode == 9) {
                         return false;
                     }
-                    //auto expand input							
+                    //auto expand input
                     input.attr("size", input.val().length + 1);
                 });
-                
+
                 input.keydown(function(event){
                     //prevent to enter some bad chars when input is empty
                     if (event.keyCode == 191) {
@@ -352,11 +352,11 @@ jQuery(function($){
                         return false;
                     }
                 });
-                
+
                 input.keyup(function(event){
                     var inp_val = input.val();
                     var etext = xssPrevent(inp_val == ''?options.default_search:inp_val);
-                    
+
                     if (event.keyCode == 8 && etext.length == 0) {
                         feed.hide();
                         browser_msie ? browser_msie_frame.hide() : '';
@@ -377,10 +377,10 @@ jQuery(function($){
                             }
                         }
                     }
-                    
+
                     if (event.keyCode != 40 && event.keyCode != 38 && etext.length != 0) {
                         counter = 0;
-                        
+
                         if (options.json_url) {
                             if (options.cache && json_cache) {
                                 addMembers(etext);
@@ -388,7 +388,7 @@ jQuery(function($){
                             }
                             else {
                                 getBoxTimeout++;
-                                var getBoxTimeoutValue = getBoxTimeout;   
+                                var getBoxTimeoutValue = getBoxTimeout;
                                 setTimeout (function() {
                                     if (getBoxTimeoutValue != getBoxTimeout) return;
                                     $.getJSON(options.json_url + ( options.json_url.indexOf("?") > -1 ? "&" : "?" ) + "tag=" + etext, null, function (data) {
@@ -396,7 +396,7 @@ jQuery(function($){
                                         json_cache = true;
                                         bindEvents();
                                     });
-                                }, options.delay);                            
+                                }, options.delay);
                             }
                         }
                         else {
@@ -441,7 +441,7 @@ jQuery(function($){
                     cache = new Array();
                     search_string = "";
                 }
-                
+
                 if(options.default_search != etext){
                     addTextItem(etext);
                 }
@@ -502,7 +502,7 @@ jQuery(function($){
                     focuson = feed.children("li:first");
                     focuson.addClass("auto-focus");
                 }
-                
+
                 if (counter > options.height) {
                     feed.css({
                         "height": (options.height * 24) + "px",
@@ -533,38 +533,38 @@ jQuery(function($){
                     }
                 }
             }
-            
+
             function itemIllumination(text, etext){
                 if (options.filter_case) {
                     try {
                         var text = text.replace(new RegExp('(.*)("' + etext + '")(.*)', 'gi'), '$1<em>$2</em>$3');;
-                    } 
+                    }
                     catch (ex) {
                     };
                 }
                 else {
                     try {
                         var text = text.replace(new RegExp('(.*)("' + etext.toLowerCase() + '")(.*)', 'gi'), '$1<em>$2</em>$3');;
-                    } 
+                    }
                     catch (ex) {
                     };
                 }
                 return text;
             }
-            
+
             function bindFeedEvent(){
                 feed.children("li").mouseover(function(){
                     feed.children("li").removeClass("auto-focus");
                     $(this).addClass("auto-focus");
                     focuson = $(this);
                 });
-                
+
                 feed.children("li").mouseout(function(){
                     $(this).removeClass("auto-focus");
                     focuson = null;
                 });
             }
-            
+
             function removeFeedEvent(){
                 feed.children("li").unbind("mouseover");
                 feed.children("li").unbind("mouseout");
@@ -573,7 +573,7 @@ jQuery(function($){
                     feed.unbind("mousemove");
                 });
             }
-            
+
             function bindEvents(){
                 var maininput = li_annon.children(".maininput");
                 bindFeedEvent();
@@ -585,20 +585,20 @@ jQuery(function($){
                     browser_msie ? browser_msie_frame.hide() : '';
                     complete.hide();
                 });
-                
+
                 maininput.unbind("keydown");
                 maininput.keydown(function(event){
                     if (event.keyCode == 191) {
                         event.preventDefault();
                         return false;
                     }
-                    
+
                     if (event.keyCode != 8) {
                         holder.children("li.bit-box.deleted").removeClass("deleted");
                     }
                     /* Triggers an "submit" event */
-                    if ((event.keyCode == 13 && options.choose_on_enter) || 
-                        (event.keyCode == 9 && options.choose_on_tab) || 
+                    if ((event.keyCode == 13 && options.choose_on_enter) ||
+                        (event.keyCode == 9 && options.choose_on_tab) ||
                         (event.keyCode == 188 && options.choose_on_comma)) {
                         if (checkFocusOn()) {
                             var option = focuson;
@@ -624,7 +624,7 @@ jQuery(function($){
                             return false;
                         }
                     }
-                    
+
                     if (event.keyCode == 40) {
                         removeFeedEvent();
                         if (focuson == null || focuson.length == 0) {
@@ -663,7 +663,7 @@ jQuery(function($){
                     }
                 });
             }
-            
+
             function maxItems(){
                 if (options.maxitems != 0) {
                     if (holder.children("li.bit-box").length < options.maxitems) {
@@ -674,7 +674,7 @@ jQuery(function($){
                     }
                 }
             }
-            
+
             function addTextItem(value){
                 if (options.newel && maxItems()) {
                     feed.children("li[fckb=1]").remove();
@@ -693,7 +693,7 @@ jQuery(function($){
                     return;
                 }
             }
-            
+
             function funCall(func, item){
                 var _object = {};
                 for (var i = 0; i < item.get(0).attributes.length; i++) {
@@ -703,7 +703,7 @@ jQuery(function($){
                 }
                 func.call(element[0], _object);
             }
-            
+
             function checkFocusOn(){
                 if (focuson == null) {
                     return false;
@@ -713,7 +713,7 @@ jQuery(function($){
                 }
                 return true;
             }
-            
+
             function xssPrevent(string){
                 string = string.replace(/[\"\'][\s]*javascript:(.*)[\"\']/g, "\"\"");
                 string = string.replace(/script(.*)/g, "");
@@ -721,7 +721,7 @@ jQuery(function($){
                 string = string.replace('/([\x00-\x08,\x0b-\x0c,\x0e-\x19])/', '');
                 return string;
             }
-            
+
             var options = $.extend({
                 json_url: null,
                 cache: false,
@@ -770,7 +770,7 @@ jQuery(function($){
             var elm_selected = new Array();
             elemid = (elemid != '' && elemid !=null)?elemid:'fcbkselect_'+ Math.floor(Math.random() * 100000);
             init();
-            
+
             return this;
         });
     };
