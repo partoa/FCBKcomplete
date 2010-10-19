@@ -4,13 +4,13 @@
   <head>
     <meta http-equiv="Content-type" content="text/html; charset=utf-8" />
     <title>FCBKcomplete Demo</title>
-    
+
     <link rel="stylesheet" href="style.css" type="text/css" media="screen" title="Test Stylesheet" charset="utf-8" />
     <script src="http://code.jquery.com/jquery-latest.min.js" type="text/javascript" charset="utf-8"></script>
-    <script src="jquery.fcbkcomplete.min.js" type="text/javascript" charset="utf-8"></script>    
+    <script src="jquery.fcbkcomplete.min.js" type="text/javascript" charset="utf-8"></script>
   </head>
-  
-  <body id="test">    
+
+  <body id="test">
     <h1>FCBKcomplete Demo</h1>
     <div id="text"></div>
     <form action="submit.php" method="POST" accept-charset="utf-8">
@@ -21,26 +21,26 @@
         <option value="test4">test3</option>
       </select>
       <br /><br /><br /><br />
-      <label>Second Control:</label>      
+      <label>Second Control:</label>
       <select id="select2" name="select2">
         <option value="testme1" class="selected locked">testme1</option>
         <option value="testme2" class="selected">testme2</option>
         <option value="testme3" class="selected">testme3</option>
       </select>
-      <br /><br /> 
-      
+      <br /><br />
+
       <select id="select3" name="select3[]" multiple="multiple">
         <option value="test1" selected="selected" rel="selected">test1</option>
         <option value="test3">test2</option>
         <option value="test3">test3</option>
       </select>
-      
+
       <br /><br />
-      <input type="submit" value="Send">     
-    </form>  
+      <input type="submit" value="Send">
+    </form>
     <script language="JavaScript">
-        $(document).ready(function() 
-        {        
+        $(document).ready(function()
+        {
           //$("#select1").fcbkcomplete();
           $("#select2, #select1").fcbkcomplete({
             json_url: "data.txt",
@@ -53,20 +53,20 @@
             onselect: function(val){ console.log([this, {'val':val}, 'select'])},
             filter_selected: true,
             maxitems: 5,
-            newel: true        
-          });		 
+            newel: true
+          });
         });
-		
+
 		function testme(item)
-	  	{	if ($.browser.mozilla) 
+	  	{	if ($.browser.mozilla)
 			{
 				console.log(item);
 			}
 			else
 			{
 				alert(item);
-			}		  	
-	  	}    
+			}
+	  	}
     </script>
-  </body>  
+  </body>
 </html>
