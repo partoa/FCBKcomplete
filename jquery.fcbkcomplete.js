@@ -134,9 +134,6 @@ jQuery(function($){
             function createFCBK(){
                 element.hide();
                 element.attr("multiple", "multiple");
-                if (element.attr("name").indexOf("[]") == -1) {
-                    element.attr("name", element.attr("name") + "[]");
-                }
 
                 holder = $(document.createElement("ul"));
                 holder.attr("class", "holder");
