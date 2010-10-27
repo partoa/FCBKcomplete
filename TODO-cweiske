@@ -1,0 +1,18 @@
+1. mouse focus
+   1. click on input
+   2. select item with mouse
+   3. focus should be on input
+
+2. open dropdown with arrow down key
+
+3. close dropdown with esc key
+
+4. switch between existing filled items with tab/shift+tab or cursor left/right
+
+5. do not accept item when pressing shift+tab
+
+6. when tabbing into the fbckeditor, do not focus the "x" of the first item but the first one completely
+
+7. make it possible to tab out
+
+8. make the input field as wide as the whole area
