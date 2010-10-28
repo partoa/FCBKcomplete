@@ -330,9 +330,9 @@ jQuery(function($){
 
                 holder.click(function(){
                     fcbkPosition();
+                    input.focus();
                     if (feed.length && (input.val().length || options.default_search.length)) {
                         if(options.default_search.length && !input.val().length){
-                            input.focus();
                             input.keyup();
                         }
                         feed.show();
