@@ -132,6 +132,16 @@ jQuery(function($){
             }
 
             function createFCBK(){
+                if (element.tagName != "select") {
+                    //element is no select tag, need to replace
+                    // it with one
+                    var elementId = element[0].id;
+                    var newElement = $(document.createElement("select"));
+                    newElement.attr("name", element[0].name);
+                    element.replaceWith(newElement);
+                    element = newElement;
+                    element.attr("id", elementId);
+                }
                 element.hide();
                 element.attr("multiple", "multiple");
 
