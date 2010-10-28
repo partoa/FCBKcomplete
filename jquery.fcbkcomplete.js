@@ -620,9 +620,13 @@ jQuery(function($){
                         } else {
                             if (options.newel) {
                                 var value = xssPrevent($(this).val());
-                                addItem(value, value);
-                                complete.hide();
-                                event.preventDefault();
+                                if (value) {
+                                    addItem(value, value);
+                                    event.preventDefault();
+                                    input.focus();
+                                } else {
+                                    complete.hide();
+                                }
                                 focuson = null;
                             }
                             if (options.keep_prompt_after_choose) {
