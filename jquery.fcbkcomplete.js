@@ -151,7 +151,9 @@ jQuery(function($){
 
                 complete = $(document.createElement("div"));
                 complete.addClass("facebook-auto");
-                complete.append('<div class="default">' + options.complete_text + "</div>");
+                if (options.complete_text) {
+                    complete.append('<div class="default">' + options.complete_text + "</div>");
+                }
 
                 if (browser_msie) {
                     complete.append('<iframe class="ie6fix" scrolling="no" frameborder="0"></iframe>');
