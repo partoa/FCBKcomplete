@@ -349,7 +349,9 @@ jQuery(function($){
                 input.keypress(function(event){
                     //13 - enter, 9 - tab
                     if (event.keyCode == 13 || event.keyCode == 9) {
-                        return false;
+                        //let the user tab out and submit the form
+                        // if nothing is to do
+                        return true;
                     }
                     //auto expand input
                     input.attr("size", input.val().length + 1);
