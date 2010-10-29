@@ -80,6 +80,7 @@
  * choose_on_tab                             - Makes a selection when the tab is hit
  * choose_on_enter                          - Makes a selection when the enter is hit
  * keep_prompt_after_choose            - keeps the combo box open even after selection
+ * php_mode                 - append [] to the tag input field name when converting it to a <select>
  * zIndex                                         - The z-index of the feed.
  */
 jQuery(function($){
@@ -137,7 +138,12 @@ jQuery(function($){
                     // it with one
                     var elementId = element[0].id;
                     var newElement = $(document.createElement("select"));
-                    newElement.attr("name", element[0].name);
+                    if (options.php_mode) {
+                        //[] is required if php wants to get multiple tags
+                        newElement.attr("name", element[0].name + "[]");
+                    } else {
+                        newElement.attr("name", element[0].name);
+                    }
                     element.replaceWith(newElement);
                     element = newElement;
                     element.attr("id", elementId);
@@ -772,7 +778,8 @@ jQuery(function($){
                 choose_on_tab:true,
                 choose_on_enter:true,
                 keep_prompt_after_choose:true,
-                layer_selector:''
+                layer_selector:'',
+                php_mode:true
             }, opt);
 
             //system variables
