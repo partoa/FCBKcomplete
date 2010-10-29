@@ -347,6 +347,7 @@ jQuery(function($){
                 });
 
                 input.keypress(function(event){
+                    //13 - enter, 9 - tab
                     if (event.keyCode == 13 || event.keyCode == 9) {
                         return false;
                     }
@@ -356,6 +357,7 @@ jQuery(function($){
 
                 input.keydown(function(event){
                     //prevent to enter some bad chars when input is empty
+                    //191 - forward slash
                     if (event.keyCode == 191) {
                         event.preventDefault();
                         return false;
@@ -366,6 +368,7 @@ jQuery(function($){
                     var inp_val = input.val();
                     var etext = xssPrevent(inp_val == ''?options.default_search:inp_val);
 
+                    //backspace - keyCode 8
                     if (event.keyCode == 8 && etext == options.default_search) {
                         feed.hide();
                         browser_msie ? browser_msie_frame.hide() : '';
@@ -387,6 +390,7 @@ jQuery(function($){
                         }
                     }
 
+                    //not down arrow (40) and not up arrow (38)
                     if (event.keyCode != 40 && event.keyCode != 38 && etext.length != 0) {
                         counter = 0;
 
@@ -597,15 +601,18 @@ jQuery(function($){
 
                 maininput.unbind("keydown");
                 maininput.keydown(function(event){
+                    //191 - forward slash
                     if (event.keyCode == 191) {
                         event.preventDefault();
                         return false;
                     }
 
+                    //8 - backspace
                     if (event.keyCode != 8) {
                         holder.children("li.bit-box.deleted").removeClass("deleted");
                     }
                     /* Triggers an "submit" event */
+                    //13 - enter, 9 - tab, 188 - comma
                     if ((event.keyCode == 13 && options.choose_on_enter) ||
                         (event.keyCode == 9 && options.choose_on_tab) ||
                         (event.keyCode == 188 && options.choose_on_comma)) {
@@ -638,6 +645,7 @@ jQuery(function($){
                         }
                     }
 
+                    //40 - down arrow
                     if (event.keyCode == 40) {
                         removeFeedEvent();
                         if (focuson == null || focuson.length == 0) {
@@ -656,6 +664,7 @@ jQuery(function($){
                         feed.children("li").removeClass("auto-focus");
                         focuson.addClass("auto-focus");
                     }
+                    //38 - up arrow
                     if (event.keyCode == 38) {
                         removeFeedEvent();
                         if (focuson == null || focuson.length == 0) {
