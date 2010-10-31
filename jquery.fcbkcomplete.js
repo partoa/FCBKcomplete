@@ -321,7 +321,7 @@ jQuery(function($){
             }
 
             function addInput(focusme){
-                li_annon = $('<li class="bit-input" id="' + elemid + '_annoninput"><input type="text" class="maininput" size="1" /></li>');
+                li_annon = $('<li class="bit-input" id="' + elemid + '_annoninput"><input type="text" class="maininput" size="1" autocomplete="off" /></li>');
                 var li = li_annon;
                 input = li.children(':first');
                 var getBoxTimeout = 0;
