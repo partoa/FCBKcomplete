@@ -3,85 +3,85 @@
  - Jquery version required: 1.2.x, 1.3.x, 1.4.x
 
  Changelog:
- - 2.00	new version of fcbkcomplete
+ - 2.00 new version of fcbkcomplete
 
  - 2.01 fixed bugs & added features
- 		fixed filter bug for preadded items
-		focus on the input after selecting tag
-		the element removed pressing backspace when the element is selected
-		input tag in the control has a border in IE7
-		added iterate over each match and apply the plugin separately
-		set focus on the input after selecting tag
+        fixed filter bug for preadded items
+        focus on the input after selecting tag
+        the element removed pressing backspace when the element is selected
+        input tag in the control has a border in IE7
+        added iterate over each match and apply the plugin separately
+        set focus on the input after selecting tag
 
  - 2.02 fixed fist element selected bug
-		fixed defaultfilter error bug
+        fixed defaultfilter error bug
 
- - 2.5 	removed selected="selected" attribute due ie bug
-		element search algorithm changed
-		better performance fix added
-		fixed many small bugs
-		onselect event added
-		onremove event added
+ - 2.5  removed selected="selected" attribute due ie bug
+        element search algorithm changed
+        better performance fix added
+        fixed many small bugs
+        onselect event added
+        onremove event added
 
- - 2.6 	ie6/7 support fix added
-		added new public method addItem due request
-		added new options "firstselected" that you can set true/false to select first element on dropdown list
-		autoexpand input element added
-		removeItem bug fixed
-		and many more bug fixed
- 		fixed public method to use it $("elem").trigger("addItem",[{"title": "test", "value": "test"}]);
+ - 2.6  ie6/7 support fix added
+        added new public method addItem due request
+        added new options "firstselected" that you can set true/false to select first element on dropdown list
+        autoexpand input element added
+        removeItem bug fixed
+        and many more bug fixed
+        fixed public method to use it $("elem").trigger("addItem",[{"title": "test", "value": "test"}]);
 
-- 2.7 	jquery 1.4 compability
- 		item lock possability added by adding locked class to preadded option <option value="value" class="selected locked">text</option>
- 		maximum item that can be added
+- 2.7   jquery 1.4 compability
+        item lock possability added by adding locked class to preadded option <option value="value" class="selected locked">text</option>
+        maximum item that can be added
 
 - 2.7.1 bug fixed
-		ajax delay added thanks to http://github.com/dolorian
+        ajax delay added thanks to http://github.com/dolorian
 
 - 2.7.2 some minor bug fixed
-		minified version recompacted due some problems
+        minified version recompacted due some problems
 
 - 2.7.3 event call fixed thanks to William Parry <williamparry!at!gmail.com>
 
 - 2.7.4 standart event change call added on addItem, removeItem
-		preSet also check if item have "selected" attribute
-		addItem minor fix
+        preSet also check if item have "selected" attribute
+        addItem minor fix
 
 - 2.7.5 added options "choose_on_enter,choose_on_tab,choose_on_comma" to control what keys trigger selection
-		added option "keep_prompt_after_choose" to control if we stay selected/focused after choosing an option
-		added options "force_width" and "auto_width" to control width setting (if both are null || false, no width is set in JS)
+        added option "keep_prompt_after_choose" to control if we stay selected/focused after choosing an option
+        added options "force_width" and "auto_width" to control width setting (if both are null || false, no width is set in JS)
 
- */
+*/
 /* Coded by: emposha <admin@emposha.com> */
 /* Copyright: Emposha.com <http://www.emposha.com/> - Distributed under MIT - Keep this message! */
 /*
  * json_url         - url to fetch json object
- * cache       		- use cache
+ * cache            - use cache
  * height           - maximum number of element shown before scroll will apear
  * newel            - show typed text like a element
- * firstselected	- automaticly select first element from dropdown
+ * firstselected    - automaticly select first element from dropdown
  * filter_case      - case sensitive filter
  * filter_selected  - filter selected items from list
  * complete_text    - text for complete page
- * maxshownitems	- maximum numbers that will be shown at dropdown list (less better performance)
- * onselect			- fire event on item remove, expects function(data){}, data is a javascript object with the attributes _value, _selected, _class.
- *                                                      this within the function is the select element in question.
- * onremove			- same as select but data lacks the _selected property
- * maxitimes		- maximum items that can be added
- * delay			- delay between ajax request (bigger delay, lower server time request)
- * default_search                              - For a default search seacrh string. '.*?' is used to show all by default
- * preset_update                              - to make converted selects skip selected items
- * used_vals                                    - for connected select elements that have a pre-selected values, this is used to filter out selected elements
- * connect_with                               - other autocompletes to connect the selected autocomplete with, for linked selects initialized together, using the 'Array' is recommended
- *                                                     so as to use less memory. Not like there will be much memory used up to begin with.
- * force_width                                  - Uses the width provided for the combo
- * auto_width                                   - Calculates width automatically for the combo
- * choose_on_comma                      - Makes a selection when the comma button is hit
- * choose_on_tab                             - Makes a selection when the tab is hit
- * choose_on_enter                          - Makes a selection when the enter is hit
- * keep_prompt_after_choose            - keeps the combo box open even after selection
- * php_mode                 - append [] to the tag input field name when converting it to a <select>
- * zIndex                                         - The z-index of the feed.
+ * maxshownitems    - maximum numbers that will be shown at dropdown list (less better performance)
+ * onselect         - fire event on item remove, expects function(data){}, data is a javascript object with the attributes _value, _selected, _class.
+ *                    this within the function is the select element in question.
+ * onremove         - same as select but data lacks the _selected property
+ * maxitimes        - maximum items that can be added
+ * delay            - delay between ajax request (bigger delay, lower server time request)
+ * default_search   - For a default search seacrh string. '.*?' is used to show all by default
+ * preset_update    - to make converted selects skip selected items
+ * used_vals        - for connected select elements that have a pre-selected values, this is used to filter out selected elements
+ * connect_with     - other autocompletes to connect the selected autocomplete with, for linked selects initialized together, using the 'Array' is recommended
+ *                    so as to use less memory. Not like there will be much memory used up to begin with.
+ * force_width      - Uses the width provided for the combo
+ * auto_width       - Calculates width automatically for the combo
+ * choose_on_comma  - Makes a selection when the comma button is hit
+ * choose_on_tab    - Makes a selection when the tab is hit
+ * choose_on_enter  - Makes a selection when the enter is hit
+ * keep_prompt_after_choose - keeps the combo box open even after selection
+ * php_mode         - append [] to the tag input field name when converting it to a <select>
+ * zIndex           - The z-index of the feed.
  */
 jQuery(function($){
     $.fn.fcbkcomplete = function(opt){
