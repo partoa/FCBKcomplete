@@ -149,7 +149,9 @@ jQuery(function($){
                     element.attr("id", elementId);
                 }
                 element.hide();
-                element.attr("multiple", "multiple");
+                if (options.maxitems > 1) {
+                    element.attr("multiple", "multiple");
+                }
 
                 holder = $(document.createElement("ul"));
                 holder.attr("class", "holder");
@@ -211,12 +213,13 @@ jQuery(function($){
                 else{
                     element.children("option").each(function(i, option){
                         option = $(option);
-                        if(option.hasClass("selected") || option.is(':selected')) {
-                            addItem(option.text(), option.val(), true, option.hasClass("locked"));
-                            option.attr("selected", "selected");
-                            used_vals.push(option.val());
-                        }
-                        else {
+                        if(option.maxitems > 1) {
+                            if(option.hasClass("selected") || option.is(':selected')) {
+                                addItem(option.text(), option.val(), true, option.hasClass("locked"));
+                                option.attr("selected", "selected");
+                                used_vals.push(option.val());
+                            }
+                        } else {
                             option.removeAttr("selected");
                         }
 
