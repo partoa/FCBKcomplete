@@ -133,7 +133,7 @@ jQuery(function($){
             }
 
             function createFCBK(){
-                if (element.tagName != "select") {
+                if (element.context.tagName.toUpperCase() != "SELECT") {
                     //element is no select tag, need to replace
                     // it with one
                     var elementId = element[0].id;
