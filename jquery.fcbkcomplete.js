@@ -79,6 +79,7 @@
  * choose_on_comma  - Makes a selection when the comma button is hit
  * choose_on_tab    - Makes a selection when the tab is hit
  * choose_on_enter  - Makes a selection when the enter is hit
+ * data             - array with default elements (key-value pairs), default is false
  * keep_prompt_after_choose - keeps the combo box open even after selection
  * php_mode         - append [] to the tag input field name when converting it to a <select>
  * zIndex           - The z-index of the feed.
