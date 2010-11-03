@@ -213,7 +213,7 @@ jQuery(function($){
                 else{
                     element.children("option").each(function(i, option){
                         option = $(option);
-                        if(option.maxitems > 1) {
+                        if(options.maxitems > 1) {
                             if(option.hasClass("selected") || option.is(':selected')) {
                                 addItem(option.text(), option.val(), true, option.hasClass("locked"));
                                 option.attr("selected", "selected");
