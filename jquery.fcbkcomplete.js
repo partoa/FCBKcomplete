@@ -1,5 +1,5 @@
 /*
- FCBKcomplete 2.7.5
+ fcbkcomplete 2.7.5
  - Jquery version required: 1.2.x, 1.3.x, 1.4.x
 
  Changelog:
@@ -213,7 +213,7 @@ jQuery(function($){
                 else{
                     element.children("option").each(function(i, option){
                         option = $(option);
-                        if(options.maxitems > 1) {
+                        if(options.maxitems > 1) {
                             if(option.hasClass("selected") || option.is(':selected')) {
                                 addItem(option.text(), option.val(), true, option.hasClass("locked"));
                                 option.attr("selected", "selected");
@@ -233,15 +233,15 @@ jQuery(function($){
             }
 
             //public method to add new item
-            $(this).bind("addItem", function(event, data){      
+            $(this).bind("addItem", function(event, data){
                 if ($.isArray(data)) {
                     for (var i = 0 ; i<data.length; i++){
                         addItem(data[i].title, data[i].value, 0, 0, 0);
                     }
-                }  
+                }
                 else {
-                    addItem(data.title, data.value, 0, 0, 0);           
-                }                
+                    addItem(data.title, data.value, 0, 0, 0);
+                }
             });
 
             function addItem(title, value, preadded, locked, focusme){
