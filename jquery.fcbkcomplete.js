@@ -51,7 +51,9 @@
         added option "keep_prompt_after_choose" to control if we stay selected/focused after choosing an option
         added options "force_width" and "auto_width" to control width setting (if both are null || false, no width is set in JS)
 
-- 2.7.6 added 'class_names' dictionnary to change the default CSS classes used by the plugin.
+- 2.7.6 minor bug fixes
+        added 'php_mode' option to append square brackets after the <select> tag's name attribute.
+        added 'class_names' dictionnary to change the default CSS classes used by the plugin.
 
 */
 /* Coded by: emposha <admin@emposha.com> */
