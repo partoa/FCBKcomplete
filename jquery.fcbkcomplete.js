@@ -769,11 +769,11 @@ jQuery(function($){
                 return string;
             }
 
-	    var default_class_names = {
-		holder: 'holder',
-		complete: 'facebook-auto',
-		closebutton: 'closebutton'
-	    };
+            var default_class_names = {
+                holder: 'holder',
+                complete: 'facebook-auto',
+                closebutton: 'closebutton'
+            };
 
             var options = $.extend({
                 json_url: null,
@@ -803,14 +803,14 @@ jQuery(function($){
                 keep_prompt_after_choose:true,
                 layer_selector:'',
                 php_mode:true,
-		class_names: default_class_names
+                class_names: default_class_names
             }, opt);
 
-	    // If a 'options.class_names' dictionary was passed, still use defaults
-	    // for undefined classes.
-	    if (options.class_names !== default_class_names) {
-		options.class_names = $.extend({}, default_class_names, options.class_names);
-	    }
+            // If a 'options.class_names' dictionary was passed, still use defaults
+            // for undefined classes.
+            if (options.class_names !== default_class_names) {
+                options.class_names = $.extend({}, default_class_names, options.class_names);
+            }
 
             //system variables
             var holder = null;
