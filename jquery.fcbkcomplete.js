@@ -51,6 +51,8 @@
         added option "keep_prompt_after_choose" to control if we stay selected/focused after choosing an option
         added options "force_width" and "auto_width" to control width setting (if both are null || false, no width is set in JS)
 
+- 2.7.6 added 'class_names' dictionnary to change the default CSS classes used by the plugin.
+
 */
 /* Coded by: emposha <admin@emposha.com> */
 /* Copyright: Emposha.com <http://www.emposha.com/> - Distributed under MIT - Keep this message! */
@@ -82,7 +84,12 @@
  * keep_prompt_after_choose - keeps the combo box open even after selection
  * php_mode         - append [] to the tag input field name when converting it to a <select>
  * zIndex           - The z-index of the feed.
+ * class_names      - CSS classes used by the plugin
+ *                     + holder (default value: holder): CSS class for the <ul> tag.
+ *                     + complete (default value: facebook-auto): CSS class for the autocomplete div.
+ *                     + closebutton (default value: closebutton): CSS class for the button to remove an item.
  */
+
 jQuery(function($){
     $.fn.fcbkcomplete = function(opt){
         var used_vals = (opt.used_vals != undefined && $.isArray(opt.used_vals))?opt.used_vals:[];
@@ -154,11 +161,11 @@ jQuery(function($){
                 }
 
                 holder = $(document.createElement("ul"));
-                holder.attr("class", "holder");
+                holder.attr("class", options.class_names.holder);
                 element.after(holder);
 
                 complete = $(document.createElement("div"));
-                complete.addClass("facebook-auto");
+                complete.addClass(options.class_names.complete);
                 if (options.complete_text) {
                     complete.append('<div class="default">' + options.complete_text + "</div>");
                 }
@@ -258,7 +265,7 @@ jQuery(function($){
                 });
                 $(li).prepend(txt);
                 $(aclose).attr({
-                    "class": "closebutton",
+                    "class": options.class_names.closebutton,
                     "href": "#"
                 });
 
@@ -762,6 +769,12 @@ jQuery(function($){
                 return string;
             }
 
+	    var default_class_names = {
+		holder: 'holder',
+		complete: 'facebook-auto',
+		closebutton: 'closebutton'
+	    };
+
             var options = $.extend({
                 json_url: null,
                 cache: false,
@@ -789,8 +802,15 @@ jQuery(function($){
                 choose_on_enter:true,
                 keep_prompt_after_choose:true,
                 layer_selector:'',
-                php_mode:true
+                php_mode:true,
+		class_names: default_class_names
             }, opt);
+
+	    // If a 'options.class_names' dictionary was passed, still use defaults
+	    // for undefined classes.
+	    if (options.class_names !== default_class_names) {
+		options.class_names = $.extend({}, default_class_names, options.class_names);
+	    }
 
             //system variables
             var holder = null;
