@@ -56,9 +56,18 @@
         added 'class_names' dictionnary to change the default CSS classes used by the plugin.
 
 */
-/* Coded by: emposha <admin@emposha.com> */
-/* Copyright: Emposha.com <http://www.emposha.com/> - Distributed under MIT - Keep this message! */
-/*
+/* Copyright: Guillermo Rauch <http://devthought.com/> - Distributed under MIT - Keep this message! */
+/* Patches by:
+ * - alan bount <alan@zeroasterisk.com>
+ * - Bertrand Marron <bertrand.marron@gmail.com>
+ * - Christian Weiske <cweiske@cweiske.de>
+ * - Maxim <admin@emposha.com>
+ * - Patrick Atambo <partoa@gmail.com>
+ * - tommaso barbugli <tommasobarbugli@Macintosh.local>
+ * - <maxim.voldachinsky@.ewave.co.il>
+ * - <mail@chkorn.de>
+ */
+/**
  * json_url         - url to fetch json object
  * cache            - use cache
  * height           - maximum number of element shown before scroll will apear

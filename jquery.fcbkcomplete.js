@@ -56,8 +56,7 @@
         added 'class_names' dictionnary to change the default CSS classes used by the plugin.
 
 */
-/* Coded by: emposha <admin@emposha.com> */
-/* Copyright: Emposha.com <http://www.emposha.com/> - Distributed under MIT - Keep this message! */
+/* Copyright: Guillermo Rauch <http://devthought.com/> - Distributed under MIT - Keep this message! */
 /*
  * json_url         - url to fetch json object
  * cache            - use cache
