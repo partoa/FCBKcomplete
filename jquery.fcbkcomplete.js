@@ -394,7 +394,7 @@
                 fcbkPosition();
                 input.focus();
                 if (feed.length && (input.val().length || options.default_search.length)) {
-                    if(options.default_search.length && !input.val().length){
+                    if (options.default_search.length && !input.val().length) {
                         input.keyup();
                     }
                     feed.show();
@@ -424,7 +424,7 @@
 
             input.keyup(function(event) {
                 var inp_val = input.val();
-                var etext = xssPrevent(inp_val == ''?options.default_search:inp_val);
+                var etext = xssPrevent(inp_val == '' ? options.default_search : inp_val);
 
                 if (event.keyCode == KEY.BACKSPACE && etext == options.default_search) {
                     feed.hide();
@@ -446,7 +446,6 @@
                         }
                     }
                 }
-
 
                 if (event.keyCode != KEY.DOWN && event.keyCode != KEY.UP && etext.length != 0) {
                     counter = 0;
