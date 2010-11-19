@@ -89,6 +89,8 @@
  *                     + holder (default value: holder): CSS class for the <ul> tag.
  *                     + complete (default value: facebook-auto): CSS class for the autocomplete div.
  *                     + closebutton (default value: closebutton): CSS class for the button to remove an item.
+ *                     + item_default (default value: bit-box): CSS class for the selected values.
+ *                     + item_locked (default value: locked): CSS class for locked items.
  */
 
 ;(function ($) {
@@ -241,7 +243,7 @@
                     option = $(option);
                     if (options.maxitems > 1) {
                         if (option.hasClass("selected") || option.is(':selected')) {
-                            addItem(option.text(), option.val(), true, option.hasClass("locked"));
+                            addItem(option.text(), option.val(), true, option.hasClass(options.class_names.item_locked));
                             option.attr("selected", "selected");
                             used_vals.push(option.val());
                         }
@@ -296,12 +298,12 @@
             var txt = document.createTextNode(title);
             var aclose = document.createElement("a");
 
-            $(li).attr({ 'class': 'bit-box', 'rel': value });
+            $(li).attr({ 'class': options.class_names.item_default, 'rel': value });
             $(li).prepend(txt);
             $(aclose).attr({ 'class': options.class_names.closebutton, 'href': '#' });
 
             if (locked) {
-                $(li).addClass('locked');
+                $(li).addClass(options.class_names.item_locked);
             }
 
             li.appendChild(aclose);
@@ -342,14 +344,14 @@
                 }
                 element.change();
             }
-            holder.children("li.bit-box.deleted").removeClass("deleted");
+            holder.children("li." + options.class_names.item_default + ".deleted").removeClass("deleted");
             feed.hide();
             browser_msie ? browser_msie_frame.hide() : '';
         }
 
 
         function removeItem (item) {
-            if (!item.hasClass('locked')) {
+            if (!item.hasClass(options.class_names.item_locked)) {
                 item.fadeOut("fast");
                 var value = item.attr("rel");
                 if (options.connect_with == 'Array') {
@@ -427,9 +429,9 @@
                 if (event.keyCode == KEY.BACKSPACE && etext == options.default_search) {
                     feed.hide();
                     browser_msie ? browser_msie_frame.hide() : '';
-                    if (!holder.children("li.bit-box:last").hasClass('locked')) {
-                        if (holder.children("li.bit-box.deleted").length == 0) {
-                            holder.children("li.bit-box:last").addClass("deleted");
+                    if (!holder.children("li." + options.class_names.item_default + ":last").hasClass(options.class_names.item_locked)) {
+                        if (holder.children("li." + options.class_names.item_default + ".deleted").length == 0) {
+                            holder.children("li." + options.class_names.item_default + ":last").addClass("deleted");
                             return false;
                         }
                         else {
@@ -437,7 +439,7 @@
                                 return;
                             }
                             deleting = 1;
-                            holder.children("li.bit-box.deleted").fadeOut("fast", function() {
+                            holder.children("li." + options.class_names.item_default + ".deleted").fadeOut("fast", function() {
                                 removeItem($(this));
                                 return false;
                             });
@@ -688,7 +690,7 @@
                 }
 
                 if (event.keyCode != KEY.BACKSPACE) {
-                    holder.children("li.bit-box.deleted").removeClass("deleted");
+                    holder.children("li." + options.class_names.item_default + ".deleted").removeClass("deleted");
                 }
 
                 /* Triggers an "submit" event */
@@ -767,7 +769,7 @@
 
         function maxItems() {
             if (options.maxitems != 0) {
-                return (holder.children("li.bit-box").length < options.maxitems);
+                return (holder.children("li." + options.class_names.item_default).length < options.maxitems);
             }
         }
 
@@ -802,7 +804,7 @@
         }
 
 
-        function xssPrevent(string) { 
+        function xssPrevent(string) {
             string = string.replace(/[\"\'][\s]*javascript:(.*)[\"\']/g, "\"\"");
             string = string.replace(/script(.*)/g, "");
             string = string.replace(/eval\((.*)\)/g, "");
@@ -815,7 +817,9 @@
     $.FCBKCompleter.default_class_names = {
         holder: 'holder',
         complete: 'facebook-auto',
-        closebutton: 'closebutton'
+        closebutton: 'closebutton',
+        item_default: 'bit-box',
+        item_locked: 'locked'
     };
 
     $.FCBKCompleter.defaults = {

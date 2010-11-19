@@ -99,5 +99,7 @@
  *                     + holder (default value: holder): CSS class for the <ul> tag.
  *                     + complete (default value: facebook-auto): CSS class for the autocomplete div.
  *                     + closebutton (default value: closebutton): CSS class for the button to remove an item.
+ *                     + item_default (default value: bit-box): CSS class for the selected values.
+ *                     + item_locked (default value: locked): CSS class for locked items.
  */
 
