@@ -767,9 +767,8 @@
 
 
         function maxItems() {
-            if (options.maxitems != 0) {
-                return (holder.children("li." + options.class_names.item_default).length < options.maxitems);
-            }
+            return (options.maxitems > 0
+                    && holder.children("li." + options.class_names.item_default).length < options.maxitems);
         }
 
 
