@@ -384,7 +384,6 @@
             input.attr({ 'type': 'text', 'class': 'maininput', 'size': '1', 'autocomplete': 'off' });
             holder.append(li_annon.append(input));
 
-            var li = li_annon;
             var getBoxTimeout = 0;
 
             input.focus(function() { complete.fadeIn("fast"); });
