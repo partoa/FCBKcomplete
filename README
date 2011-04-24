@@ -55,6 +55,18 @@
         added 'php_mode' option to append square brackets after the <select> tag's name attribute.
         added 'class_names' dictionnary to change the default CSS classes used by the plugin.
 
+- 2.7.6.BM.1 show stopper bug fixes
+        removed '/' key filter as it filters all other characters on the same key, and there is no reason to filter it.
+        correctly url encodes the user text before calling the 'suggest' webservice (specified in json_url). This fix bugs when typing reserved uri keywords (?, &, ...)
+        uses $.ajax instead of $.getJSON to fetch json_url, so if default http method is set to POST using $.ajaxSetup, the url is queried using POST not GET. This fix issues with IE caching and simplifies ASP.NET MVC 'suggest' webservice serverside code.
+        xssPrevent: chained statements.
+        replaced unsupported event.keyCode with correct event.which
+        added support for spaces in tags. Warning: ":" and "," and """ are used internally so filter them out. This is an existing limitation.
+        delay: if delay is set the suggest box now appears only after the items are fetched from the ajax service, thus correctly displaying only suggested/filtered tags.
+        LEFT/RIGHT in addition to UP/DOWN an be used to navigate through the items.
+
+
+
 */
 /* Copyright: Guillermo Rauch <http://devthought.com/> - Distributed under MIT - Keep this message! */
 /* Patches by:
@@ -66,6 +78,7 @@
  * - tommaso barbugli <tommasobarbugli@Macintosh.local>
  * - <maxim.voldachinsky@.ewave.co.il>
  * - <mail@chkorn.de>
+ * - Benjamin Mayrargue <benjamin@mayrargue.com>
  */
 /**
  * json_url         - url to fetch json object

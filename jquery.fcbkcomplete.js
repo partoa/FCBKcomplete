@@ -55,6 +55,16 @@
         added 'php_mode' option to append square brackets after the <select> tag's name attribute.
         added 'class_names' dictionnary to change the default CSS classes used by the plugin.
 
+- 2.7.6.BM.1 show stopper bug fixes
+        removed '/' key filter as it filters all other characters on the same key, and there is no reason to filter it.
+        correctly url encodes the user text before calling the 'suggest' webservice (specified in json_url). This fix bugs when typing reserved uri keywords (?, &, ...)
+        uses $.ajax instead of $.getJSON to fetch json_url, so if default http method is set to POST using $.ajaxSetup, the url is queried using POST not GET. This fix issues with IE caching and simplifies ASP.NET MVC 'suggest' webservice serverside code.
+        xssPrevent: chained statements.
+        replaced unsupported event.keyCode with correct event.which
+        added support for spaces in tags. Warning: ":" and "," and """ are used internally so filter them out. This is an existing limitation.
+        delay: if delay is set the suggest box now appears only after the items are fetched from the ajax service, thus correctly displaying only suggested/filtered tags.
+        LEFT/RIGHT in addition to UP/DOWN an be used to navigate through the items.
+
 */
 /* Copyright: Guillermo Rauch <http://devthought.com/> - Distributed under MIT - Keep this message! */
 /*
@@ -116,6 +126,8 @@
         var KEY = {
             UP: 38,
             DOWN: 40,
+            LEFT: 37,
+            RIGHT: 39,
             DEL: 46,
             TAB: 9,
             RETURN: 13,
@@ -255,7 +267,7 @@
                         caption: option.text(),
                         value: option.val()
                     });
-                    search_string += "" + (cache.length - 1) + ":" + option.text() + ";";
+                    search_string += (cache.length - 1) + ":" + option.text() + ";";
                 });
             }
         }
@@ -318,8 +330,8 @@
                 li_annon.remove();
                 var _item;
                 addInput(focusme);
-                if (element.children("option[value=" + value + "]").length) {
-                    _item = element.children("option[value=" + value + "]");
+                if (element.children("option[value=\"" + value + "\"]").length) {
+                    _item = element.children("option[value=\"" + value + "\"]");
                     _item.get(0).setAttribute("selected", "selected");
                     if (!_item.hasClass("selected")) {
                         _item.addClass("selected");
@@ -386,8 +398,8 @@
 
             var getBoxTimeout = 0;
 
-            input.focus(function() { complete.fadeIn("fast"); });
-            input.blur(function() { complete.fadeOut("fast"); });
+            //input.focus(function() { complete.fadeIn("fast"); }); //BM: removed to correctly honor 'delay'
+            input.blur(function() { if( getBoxTimeout != 0 ) {clearTimeout(getBoxTimeout);getBoxTimeout=0;} complete.fadeOut("fast"); });  //BM: correctly remove the running delay timer
 
             holder.click(function() {
                 fcbkPosition();
@@ -406,70 +418,72 @@
             });
 
             input.keypress(function(event) {
-                if (event.keyCode == KEY.RETURN || event.keyCode == KEY.TAB) {
+                if (event.which == KEY.RETURN || event.which == KEY.TAB) {
                     return true;
                 }
                 //auto expand input
                 input.attr("size", input.val().length + 1);
             });
 
-            input.keydown(function(event) {
-                //prevent to enter some bad chars when input is empty
-                if (event.keyCode == KEY.FORWARD_SLASH) {
-                    event.preventDefault();
-                    return false;
-                }
-            });
+            //BM: removed as the shift/control state of the key is not checked, so this disables all chars on the keyboard key.
+//            input.keydown(function(event) {
+//                //prevent to enter some bad chars when input is empty
+//                if (event.which == KEY.FORWARD_SLASH) {
+//                    event.preventDefault();
+//                    return false;
+//                }
+//            });
 
             input.keyup(function(event) {
                 var inp_val = input.val();
                 var etext = xssPrevent(inp_val == '' ? options.default_search : inp_val);
 
-                if (event.keyCode == KEY.BACKSPACE && etext == options.default_search) {
-                    feed.hide();
-                    browser_msie ? browser_msie_frame.hide() : '';
+                if (event.which == KEY.BACKSPACE && etext == options.default_search) {
+                    //feed.hide(); //BM: don't hide the "complete" box on delete
+                    //browser_msie ? browser_msie_frame.hide() : ''; //BM: don't hide the "complete" box on delete
                     if (!holder.children("li." + options.class_names.item_default + ":last").hasClass(options.class_names.item_locked)) {
                         if (holder.children("li." + options.class_names.item_default + ".deleted").length == 0) {
                             holder.children("li." + options.class_names.item_default + ":last").addClass("deleted");
-                            return false;
+                            //return false; //BM: don't hide the "complete" box on delete
                         }
                         else {
                             if (deleting) {
-                                return;
+                                //return; //BM: don't hide the "complete" box on delete
                             }
                             deleting = 1;
                             holder.children("li." + options.class_names.item_default + ".deleted").fadeOut("fast", function() {
                                 removeItem($(this));
-                                return false;
+                                //return false; //BM: don't hide the "complete" box on delete
                             });
                         }
                     }
                 }
 
-                if (event.keyCode != KEY.DOWN && event.keyCode != KEY.UP && etext.length != 0) {
+                if (event.which != KEY.DOWN && event.which != KEY.UP && event.which != KEY.LEFT && event.which != KEY.RIGHT && etext.length != 0) {
                     counter = 0;
 
                     if (options.json_url) {
                         if (options.cache && json_cache) {
                             addMembers(etext);
                             bindEvents();
+                            complete.fadeIn("fast"); //BM: we can now display the complete part
                         }
                         else {
-                            getBoxTimeout++;
-                            var getBoxTimeoutValue = getBoxTimeout;
-                            setTimeout (function() {
-                                if (getBoxTimeoutValue != getBoxTimeout) return;
-                                $.getJSON(options.json_url + ( options.json_url.indexOf("?") > -1 ? "&" : "?" ) + "tag=" + etext, null,
-                                          function (data) {
-                                              addMembers(etext, data);
-                                              json_cache = true;
+                            if( getBoxTimeout != 0 ) clearTimeout(getBoxTimeout); //BM: correctly remove the running delay timer
+                            getBoxTimeout = setTimeout (function() {
+                                getBoxTimeout = 0;
+                                $.ajax({url: options.json_url, dataType: 'json', data: { tag: etext }, //Automatic url encoding of etext by jQuery
+                                          success: function(result) {
+                                              json_cache = true; //on next call the cached Json result will be used if options.cache is true.
+                                              addMembers(etext, result);
                                               bindEvents();
-                                          });
+                                              complete.fadeIn("fast"); //BM: we can now display the complete part
+                                          }});
                             }, options.delay);
                         }
                     }
                     else {
-                        var data = undefined
+                        var data = undefined;
                         if (options.preset_update) {
                             data = new Array();
                             element.children("option").each(function(i, option) {
@@ -485,6 +499,7 @@
                         }
                         addMembers(etext, data);
                         bindEvents();
+                        complete.fadeIn("fast"); //BM: we can now display the complete part
                     }
                     fcbkPosition();
                     complete.children(".default").hide();
@@ -520,7 +535,7 @@
                         caption: val.caption,
                         value: val.value
                     });
-                    search_string += "" + (cache.length - 1) + ":" + val.caption + ";";
+                    search_string += (cache.length - 1) + ":" + val.caption + ";";
                 });
             }
 
@@ -530,14 +545,15 @@
                 filter = "";
             }
 
-            var myregexp, match;
+            var myregexp, match=null;
             try {
-                myregexp = new RegExp('(?:^|;)\\s*(\\d+)\\s*:[^;]*?' + etext + '[^;]*', 'g' + filter);
+                myregexp = new RegExp('(?:^|;)\\s*(\\d+)\\s*:[^;]*?' + (etext===options.default_search ? etext : RegExp.quote(etext)) + '[^;]*', 'g' + filter); //BM: quoted etext
                 match = myregexp.exec(search_string);
             }
             catch (ex) {
             };
 
+            //Filter tags. Only kept tags are put into 'content'.
             var content = '';
             while (match != null && maximum > 0) {
                 var id = match[1];
@@ -547,9 +563,10 @@
                     op_selected = $.inArray(object.value.toString(), used_vals);
                 }
                 if (op_selected < 0) {
-                    var elm = element.children("option[value=" + object.value + "]");
+//BM: ugly code to fix
+                    var elm = element.children("option[value=\"" + object.value.replace('\\','\\\\') + "\"]"); //BM: fix quotes & spaces
                     if (elm.length == 0) {
-                        elm = element.children(":contains('" + object.value + "')");
+                        elm = element.children(":contains('\"" + object.value.replace('\\','\\\\') + "\"')"); //BM: fix quotes & spaces
                     }
                     op_selected = (elm.length > 0 && options.filter_selected && (elm.is(".selected") || elm.is(":selected")));
                 }
@@ -682,19 +699,19 @@
 
             maininput.unbind("keydown");
             maininput.keydown(function(event) {
-                if (event.keyCode == KEY.FORWARD_SLASH) {
-                    event.preventDefault();
-                    return false;
-                }
+//                if (event.which == KEY.FORWARD_SLASH) {
+//                    event.preventDefault();
+//                    return false;
+//                }
 
-                if (event.keyCode != KEY.BACKSPACE) {
+                if (event.which != KEY.BACKSPACE) {
                     holder.children("li." + options.class_names.item_default + ".deleted").removeClass("deleted");
                 }
 
                 /* Triggers an "submit" event */
-                if ((event.keyCode == KEY.RETURN && options.choose_on_enter) ||
-                    (event.keyCode == KEY.TAB && options.choose_on_tab) ||
-                    (event.keyCode == KEY.COMMA && options.choose_on_comma)) {
+                if ((event.which == KEY.RETURN && options.choose_on_enter) ||
+                    (event.which == KEY.TAB && options.choose_on_tab) ||
+                    (event.which == KEY.COMMA && options.choose_on_comma)) {
                     if (checkFocusOn()) {
                         var option = focuson;
                         addItem(option.text(), option.attr("rel"));
@@ -724,7 +741,7 @@
                     }
                 }
 
-                if (event.keyCode == KEY.DOWN) {
+                if (event.which == KEY.DOWN || event.which == KEY.RIGHT) {
                     removeFeedEvent();
                     if (focuson == null || focuson.length == 0) {
                         focuson = feed.children("li:first");
@@ -743,7 +760,7 @@
                     focuson.addClass("auto-focus");
                 }
 
-                if (event.keyCode == KEY.UP) {
+                if (event.which == KEY.UP || event.which == KEY.LEFT) {
                     removeFeedEvent();
                     if (focuson == null || focuson.length == 0) {
                         focuson = feed.children("li:last");
@@ -801,14 +818,12 @@
         }
 
 
-        function xssPrevent(string) {
-            string = string.replace(/[\"\'][\s]*javascript:(.*)[\"\']/g, "\"\"");
-            string = string.replace(/script(.*)/g, "");
-            string = string.replace(/eval\((.*)\)/g, "");
-            string = string.replace('/([\x00-\x08,\x0b-\x0c,\x0e-\x19])/', '');
-            return string;
+        function xssPrevent(s) {
+            return s.replace(/[\"\'][\s]*javascript:(.*)[\"\']/g, "\"\"")
+                .replace(/script(.*)/g, "")
+                .replace(/eval\((.*)\)/g, "")
+                .replace('/([\x00-\x08,\x0b-\x0c,\x0e-\x19])/', '');
         }
-
     }
 
     $.FCBKCompleter.default_class_names = {
@@ -850,5 +865,11 @@
         class_names: $.FCBKCompleter.default_class_names
     }
 
+    //BM: for quoting etext
+    if(typeof RegExp.quote == 'undefined') {
+        RegExp.quote = function(s) {
+            return new String(s).replace( /([.?*+^$[\]\\(){}-])/g , "\\$1");
+        };
+    }
 
 })(jQuery);
