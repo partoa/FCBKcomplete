@@ -63,9 +63,22 @@
         replaced unsupported event.keyCode with correct event.which
         added support for spaces in tags. Warning: ":" and "," and """ are used internally so filter them out. This is an existing limitation.
         delay: if delay is set the suggest box now appears only after the items are fetched from the ajax service, thus correctly displaying only suggested/filtered tags.
-        LEFT/RIGHT in addition to UP/DOWN an be used to navigate through the items.
+        LEFT/RIGHT in addition to UP/DOWN can be used to navigate through the items.
 
+- 2.7.6.BM.2 more show stopper bugs fixes, updated example with a nice theme
+        Resharper 6 Javascript realtime analyzer: fix missing ; duplicate var and inconsistent returns
+        Included jamesspencer patch to allow the use of non-(multi)select inputs
+        funCall can now return a value
+        changed the browser_msie test to $.support
+        options.filter_selected missing
+        included changed by zack: item_deleting class, adding hover support to list items, adding click selection support
+        fix LEFT/RIGHT navigation when no item is selected (will do normal cursor navigation inside text)
+        renamed event to e to prevent global "event" variable collision on ie
+        more regexp quoting
+        fix broken keep_prompt_after_choose when adding a tag by clicking on it
+        fix focus on input after a selection was not working as expected
 */
+
 /* Copyright: Guillermo Rauch <http://devthought.com/> - Distributed under MIT - Keep this message! */
 /*
  * json_url         - url to fetch json object
@@ -150,14 +163,14 @@
         var search_string = '';
         var focuson = null;
         var deleting = 0;
-        var browser_msie = "\v" == "v";
+        var browser_msie = !$.support.boxModel; //"\v" == "v";
         var browser_msie_frame;
         var element = $(input);
         var elemid = element.attr("id") || 'fcbkselect_ '+ Math.floor(Math.random() * 100000);
         var li_annon = null;
         var input = null;
         var elm_selected = new Array();
-        var used_vals = (options.used_vals != undefined && $.isArray(options.used_vals)) ? options.used_vals : [];
+        var used_vals = (options && options.used_vals != undefined && $.isArray(options.used_vals)) ? options.used_vals : [];
 
 
         //=========== Setup plugin ============//
@@ -177,7 +190,7 @@
             }
         });
 
-        $(this).bind("addItem", function(event, data) {
+        $(this).bind("addItem", function(e, data) {
             if ($.isArray(data)) {
                 for (var i = 0 ; i<data.length; i++) {
                     addItem(data[i].title, data[i].value, 0, 0, 0);
@@ -312,6 +325,35 @@
 
             $(li).attr({ 'class': options.class_names.item_default, 'rel': value });
             $(li).prepend(txt);
+
+            $(li).hover(// changed by zack, adding hover support to list items
+                function() { //mouseover
+                    if (!$(this).hasClass("deleted")) {
+                        $(this).addClass("ui-state-hover");
+                    }
+                },
+                function() { //mouseout
+                    if (!$(this).hasClass("deleted")) {
+                        $(this).removeClass("ui-state-hover");
+                    }
+                }
+            );
+
+            $(li).click(// changed by zack, adding click selection support
+                function(e) {
+                    e.stopPropagation();
+                    if ($(this).hasClass("deleted")) {
+                        // it's already selected, deselect it (and by it I mean everything)
+                        holder.children("li."+options.class_names.item_default+".deleted").removeClass("deleted ui-state-hover");
+                    } else {
+                        // otherwise, select it, but only after deselecting everything else first
+                        holder.children("li."+options.class_names.item_default+".deleted").removeClass("deleted ui-state-hover");
+                        $(this).addClass("deleted ui-state-hover");
+                    }
+                    $("#" + elemid + "_annoninput").children(".maininput").focus();
+                }
+            );
+            
             $(aclose).attr({ 'class': options.class_names.closebutton, 'href': '#' });
 
             if (locked) {
@@ -338,27 +380,28 @@
                     }
                 }
                 else {
-                    var _item = $(document.createElement("option"));
+                    _item = $(document.createElement("option"));
                     _item.attr("value", value).get(0).setAttribute("selected", "selected");
                     _item.attr("value", value).addClass("selected");
                     _item.text(title);
-                    element.append(_item);
+                    element.is('select') && element.append(_item);
                 }
 
                 if (options.connect_with == 'Array' && $.inArray(value, used_vals) < 0) {
                     used_vals.push(value.toString());
                 }
                 else if (options.connect_with && options.connect_with != 'Array' ) {
-                    setSelecton(value.toString(), true)
+                    setSelecton(value.toString(), true);
                 }
                 if (typeof options.onselect == 'function') {
-                    funCall(options.onselect, _item)
+                    funCall(options.onselect, _item);
                 }
                 element.change();
             }
-            holder.children("li." + options.class_names.item_default + ".deleted").removeClass("deleted");
+            holder.children("li." + options.class_names.item_default + ".deleted").removeClass("deleted ui-state-hover");
             feed.hide();
-            browser_msie ? browser_msie_frame.hide() : '';
+            if(browser_msie) browser_msie_frame.hide();
+            return true;
         }
 
 
@@ -373,12 +416,12 @@
                     }
                 }
                 else if (options.connect_with && options.connect_with != 'Array') {
-                    setSelecton(value, false)
+                    setSelecton(value, false);
                 }
 
                 if (typeof options.onremove == 'function') {
                     var _item = element.children("option[value=" + value + "]");
-                    funCall(options.onremove, _item)
+                    funCall(options.onremove, _item);
                 }
                 element.children('option[value="' + item.attr("rel") + '"]').removeAttr("selected").removeClass("selected");
                 item.remove();
@@ -401,9 +444,15 @@
             //input.focus(function() { complete.fadeIn("fast"); }); //BM: removed to correctly honor 'delay'
             input.blur(function() { if( getBoxTimeout != 0 ) {clearTimeout(getBoxTimeout);getBoxTimeout=0;} complete.fadeOut("fast"); });  //BM: correctly remove the running delay timer
 
+            // change from zack: clicking the input will now deselect any selected items
+            input.click(function(e) {
+                    if ($(e.target).is(this)) {
+                        holder.children("li."+options.class_names.item_default+".deleted").removeClass("deleted ui-state-hover");
+                    }
+                });
+            
             holder.click(function() {
                 fcbkPosition();
-                input.focus();
                 if (feed.length && (input.val().length || options.default_search.length)) {
                     if (options.default_search.length && !input.val().length) {
                         input.keyup();
@@ -412,15 +461,19 @@
                 }
                 else {
                     feed.hide();
-                    browser_msie ? browser_msie_frame.hide() : '';
+                    if(browser_msie) browser_msie_frame.hide();
+                    // change from zack: clicking anywhere in the holder will deselect any selected items
+                    holder.children("li."+options.class_names.item_default+".deleted").removeClass("deleted ui-state-hover");
                     complete.children(".default").show();
                 }
+                    
+                setTimeout(function() {input.focus();}, 0);
             });
 
-            input.keypress(function(event) {
-                if (event.which == KEY.RETURN || event.which == KEY.TAB) {
-                    return true;
-                }
+            input.keypress(function(e) {
+                if (e.which == KEY.RETURN || e.which == KEY.TAB)
+                    return;
+
                 //auto expand input
                 input.attr("size", input.val().length + 1);
             });
@@ -434,16 +487,17 @@
 //                }
 //            });
 
-            input.keyup(function(event) {
+            input.keyup(function(e) {
                 var inp_val = input.val();
                 var etext = xssPrevent(inp_val == '' ? options.default_search : inp_val);
 
-                if (event.which == KEY.BACKSPACE && etext == options.default_search) {
+                if (e.which == KEY.BACKSPACE && etext == options.default_search) {
                     //feed.hide(); //BM: don't hide the "complete" box on delete
                     //browser_msie ? browser_msie_frame.hide() : ''; //BM: don't hide the "complete" box on delete
-                    if (!holder.children("li." + options.class_names.item_default + ":last").hasClass(options.class_names.item_locked)) {
-                        if (holder.children("li." + options.class_names.item_default + ".deleted").length == 0) {
-                            holder.children("li." + options.class_names.item_default + ":last").addClass("deleted");
+                    var tagSelector = "li." + options.class_names.item_default;
+                    if (!holder.children(tagSelector + ":last").hasClass(options.class_names.item_locked)) {
+                        if (holder.children(tagSelector + ".deleted").length == 0) {
+                            holder.children(tagSelector + ":last").addClass("deleted ui-state-hover");
                             //return false; //BM: don't hide the "complete" box on delete
                         }
                         else {
@@ -451,59 +505,62 @@
                                 //return; //BM: don't hide the "complete" box on delete
                             }
                             deleting = 1;
-                            holder.children("li." + options.class_names.item_default + ".deleted").fadeOut("fast", function() {
+                            holder.children(tagSelector + ".deleted").addClass(options.class_names.item_deleting).removeClass(options.class_names.item_default).fadeOut("fast", function() {
                                 removeItem($(this));
                                 //return false; //BM: don't hide the "complete" box on delete
                             });
+                            holder.children(tagSelector + ":last").addClass("deleted ui-state-hover");
                         }
                     }
                 }
 
-                if (event.which != KEY.DOWN && event.which != KEY.UP && event.which != KEY.LEFT && event.which != KEY.RIGHT && etext.length != 0) {
-                    counter = 0;
+                if (e.which != KEY.DOWN && e.which != KEY.UP && e.which != KEY.LEFT && e.which != KEY.RIGHT) {
+                    if(etext.length != 0) {
+                        counter = 0;
 
-                    if (options.json_url) {
-                        if (options.cache && json_cache) {
-                            addMembers(etext);
+                        if (options.json_url) {
+                            if (options.cache && json_cache) {
+                                addMembers(etext);
+                                bindEvents();
+                                complete.fadeIn("fast"); //BM: we can now display the complete part
+                            }
+                            else {
+                                if( getBoxTimeout != 0 ) clearTimeout(getBoxTimeout); //BM: correctly remove the running delay timer
+                                getBoxTimeout = setTimeout (function() {
+                                    getBoxTimeout = 0;
+                                    $.ajax({url: options.json_url, dataType: 'json', data: { tag: etext }, //Automatic url encoding of etext by jQuery
+                                              success: function(result) {
+                                                  json_cache = true; //on next call the cached Json result will be used if options.cache is true.
+                                                  addMembers(etext, result);
+                                                  bindEvents();
+                                                  complete.fadeIn("fast"); //BM: we can now display the complete part
+                                              }});
+                                }, options.delay);
+                            }
+                        }
+                        else {
+                            var data = undefined;
+                            if (options.preset_update) {
+                                data = new Array();
+                                element.children("option").each(function(i, option) {
+                                    option = $(option);
+                                    if (option.is(':selected') || option.is('.selected')) {
+                                        return;
+                                    }
+                                    data.push({
+                                        caption: option.text(),
+                                        value: option.val()
+                                    });
+                                });
+                            }
+                            addMembers(etext, data);
                             bindEvents();
                             complete.fadeIn("fast"); //BM: we can now display the complete part
                         }
-                        else {
-                            if( getBoxTimeout != 0 ) clearTimeout(getBoxTimeout); //BM: correctly remove the running delay timer
-                            getBoxTimeout = setTimeout (function() {
-                                getBoxTimeout = 0;
-                                $.ajax({url: options.json_url, dataType: 'json', data: { tag: etext }, //Automatic url encoding of etext by jQuery
-                                          success: function(result) {
-                                              json_cache = true; //on next call the cached Json result will be used if options.cache is true.
-                                              addMembers(etext, result);
-                                              bindEvents();
-                                              complete.fadeIn("fast"); //BM: we can now display the complete part
-                                          }});
-                            }, options.delay);
-                        }
+                        fcbkPosition();
+                        complete.children(".default").hide();
+                        feed.show();
                     }
-                    else {
-                        var data = undefined;
-                        if (options.preset_update) {
-                            data = new Array();
-                            element.children("option").each(function(i, option) {
-                                option = $(option);
-                                if (option.is(':selected') || option.is('.selected')) {
-                                    return undefined;
-                                }
-                                data.push({
-                                    caption: option.text(),
-                                    value: option.val()
-                                });
-                            });
-                        }
-                        addMembers(etext, data);
-                        bindEvents();
-                        complete.fadeIn("fast"); //BM: we can now display the complete part
-                    }
-                    fcbkPosition();
-                    complete.children(".default").hide();
-                    feed.show();
                 }
             });
             if (focusme) {
@@ -564,9 +621,9 @@
                 }
                 if (op_selected < 0) {
 //BM: ugly code to fix
-                    var elm = element.children("option[value=\"" + object.value.replace('\\','\\\\') + "\"]"); //BM: fix quotes & spaces
+                    var elm = element.children("option[value=\"" + (object.value+'').replace('\\','\\\\') + "\"]"); //BM: fix quotes & spaces
                     if (elm.length == 0) {
-                        elm = element.children(":contains('\"" + object.value.replace('\\','\\\\') + "\"')"); //BM: fix quotes & spaces
+                        elm = element.children(":contains('\"" + (object.value+'').replace('\\','\\\\') + "\"')"); //BM: fix quotes & spaces
                     }
                     op_selected = (elm.length > 0 && options.filter_selected && (elm.is(".selected") || elm.is(":selected")));
                 }
@@ -584,8 +641,8 @@
 
             feed.append(content);
             if (options.firstselected) {
-                focuson = feed.children("li:first");
-                focuson.addClass("auto-focus");
+                focuson = feed.children("li:visible:first"); //Added :visible
+                focuson.addClass("auto-focus ui-state-hover");
             }
 
             if (counter > options.height) {
@@ -643,16 +700,17 @@
 
 
         function itemIllumination(text, etext) {
+            text = ''+text;
             if (options.filter_case) {
                 try {
-                    var text = text.replace(new RegExp('(.*)("' + etext + '")(.*)', 'gi'), '$1<em>$2</em>$3');;
+                    text = text.replace(new RegExp('(.*)("' + RegExp.quote(etext) + '")(.*)', 'gi'), '$1<em>$2</em>$3');;
                 }
                 catch (ex) {
                 };
             }
             else {
                 try {
-                    var text = text.replace(new RegExp('(.*)("' + etext.toLowerCase() + '")(.*)', 'gi'), '$1<em>$2</em>$3');;
+                    text = text.replace(new RegExp('(.*)("' + RegExp.quote(etext.toLowerCase()) + '")(.*)', 'gi'), '$1<em>$2</em>$3');;
                 }
                 catch (ex) {
                 };
@@ -663,19 +721,20 @@
 
         function bindFeedEvent(){
             feed.children("li").mouseover(function() {
-                feed.children("li").removeClass("auto-focus");
-                $(this).addClass("auto-focus");
+                feed.children("li").removeClass("auto-focus ui-state-hover");
+                $(this).addClass("auto-focus ui-state-hover");
                 focuson = $(this);
             });
 
             feed.children("li").mouseout(function(){
-                $(this).removeClass("auto-focus");
+                $(this).removeClass("auto-focus ui-state-hover");
                 focuson = null;
             });
         }
 
 
-        function removeFeedEvent(){
+        function removeFeedEvent(e){
+            e.preventDefault();
             feed.children("li").unbind("mouseover");
             feed.children("li").unbind("mouseout");
             feed.mousemove(function() {
@@ -692,63 +751,68 @@
             feed.children("li").mousedown(function() {
                 var option = $(this);
                 addItem(option.text(), option.attr("rel"));
+
                 feed.hide();
-                browser_msie ? browser_msie_frame.hide() : '';
+                if (browser_msie) browser_msie_frame.hide();
                 complete.hide();
+
+                if (options.keep_prompt_after_choose) {
+                    holder.trigger("click");
+                }
             });
 
             maininput.unbind("keydown");
-            maininput.keydown(function(event) {
-//                if (event.which == KEY.FORWARD_SLASH) {
-//                    event.preventDefault();
+            maininput.keydown(function(e) {
+//                if (e.which == KEY.FORWARD_SLASH) {
+//                    e.preventDefault();
 //                    return false;
 //                }
 
-                if (event.which != KEY.BACKSPACE) {
-                    holder.children("li." + options.class_names.item_default + ".deleted").removeClass("deleted");
+                if (e.which != KEY.BACKSPACE) {
+                    holder.children("li." + options.class_names.item_default + ".deleted").removeClass("deleted ui-state-hover");
                 }
 
                 /* Triggers an "submit" event */
-                if ((event.which == KEY.RETURN && options.choose_on_enter) ||
-                    (event.which == KEY.TAB && options.choose_on_tab) ||
-                    (event.which == KEY.COMMA && options.choose_on_comma)) {
+                if ((e.which == KEY.RETURN && options.choose_on_enter) ||
+                    (e.which == KEY.TAB && options.choose_on_tab) ||
+                    (e.which == KEY.COMMA && options.choose_on_comma)) { 
                     if (checkFocusOn()) {
                         var option = focuson;
                         addItem(option.text(), option.attr("rel"));
                         complete.hide();
-                        event.preventDefault();
+                        e.preventDefault();
                         focuson = null;
                         if (options.keep_prompt_after_choose) {
                             holder.trigger("click");
                         }
-                        return false;
+                        return;
                     } else {
                         if (options.newel) {
                             var value = xssPrevent($(this).val());
                             if (value) {
                                 addItem(value, value);
-                                event.preventDefault();
+                                e.preventDefault();
                                 input.focus();
                             } else {
                                 complete.hide();
                             }
                             focuson = null;
                         }
-                        if (options.keep_prompt_after_choose) {
+                        if (options.keep_prompt_after_choose) { 
                             holder.trigger("click");
                         }
-                        return false;
+                        return;
                     }
                 }
 
-                if (event.which == KEY.DOWN || event.which == KEY.RIGHT) {
-                    removeFeedEvent();
+                if (e.which == KEY.DOWN || (e.which == KEY.RIGHT && (focuson != null && focuson.length != 0)) ) {
+                    removeFeedEvent(e);
                     if (focuson == null || focuson.length == 0) {
-                        focuson = feed.children("li:first");
+                        focuson = feed.children("li:visible:first");
                         feed.get(0).scrollTop = 0;
                     }
                     else {
-                        focuson.removeClass("auto-focus");
+                        focuson.removeClass("auto-focus ui-state-hover");
                         focuson = focuson.next();
                         var prev = parseInt(focuson.prevAll("li").length);
                         var next = parseInt(focuson.nextAll("li").length);
@@ -756,18 +820,18 @@
                             feed.get(0).scrollTop = parseInt(focuson.get(0).scrollHeight, 10) * (prev - Math.round(options.height / 2));
                         }
                     }
-                    feed.children("li").removeClass("auto-focus");
-                    focuson.addClass("auto-focus");
+                    feed.children("li").removeClass("auto-focus ui-state-hover");
+                    focuson.addClass("auto-focus ui-state-hover");
                 }
 
-                if (event.which == KEY.UP || event.which == KEY.LEFT) {
-                    removeFeedEvent();
+                if (e.which == KEY.UP || (e.which == KEY.LEFT && (focuson != null && focuson.length != 0)) ) {
+                    removeFeedEvent(e);
                     if (focuson == null || focuson.length == 0) {
                         focuson = feed.children("li:last");
                         feed.get(0).scrollTop = parseInt(focuson.get(0).scrollHeight) * (parseInt(feed.children("li").length) - Math.round(options.height / 2));
                     }
                     else {
-                        focuson.removeClass("auto-focus");
+                        focuson.removeClass("auto-focus ui-state-hover");
                         focuson = focuson.prev();
                         var prev = parseInt(focuson.prevAll("li").length);
                         var next = parseInt(focuson.nextAll("li").length);
@@ -775,8 +839,8 @@
                             feed.get(0).scrollTop = parseInt(focuson.get(0).scrollHeight) * (prev - Math.round(options.height / 2));
                         }
                     }
-                    feed.children("li").removeClass("auto-focus");
-                    focuson.addClass("auto-focus");
+                    feed.children("li").removeClass("auto-focus ui-state-hover");
+                    focuson.addClass("auto-focus ui-state-hover");
                 }
             });
         }
@@ -809,7 +873,7 @@
                     _object['_' + item.get(0).attributes[i].nodeName] =  item.get(0).attributes[i].nodeValue;
                 }
             }
-            func.call(element[0], _object);
+            return func.call(element[0], _object);
         }
 
 
@@ -819,18 +883,19 @@
 
 
         function xssPrevent(s) {
-            return s.replace(/[\"\'][\s]*javascript:(.*)[\"\']/g, "\"\"")
+            return (s+'').replace(/[\"\'][\s]*javascript:(.*)[\"\']/g, "\"\"")
                 .replace(/script(.*)/g, "")
                 .replace(/eval\((.*)\)/g, "")
                 .replace('/([\x00-\x08,\x0b-\x0c,\x0e-\x19])/', '');
         }
-    }
+    };
 
     $.FCBKCompleter.default_class_names = {
         holder: 'holder',
         complete: 'facebook-auto',
         closebutton: 'closebutton',
         item_default: 'bit-box',
+        item_deleting: 'bit-box-deleting',
         item_locked: 'locked'
     };
 
@@ -841,12 +906,12 @@
         newel: false,
         firstselected: false,
         filter_case: false,
-        filter_hide: false,
+        filter_selected: false,
         complete_text: "Start to type...",
-        default_search:'.*?',
+        default_search: '.*?',
         maxshownitems: 30,
         preset_update: true,
-        maxitems:10,
+        maxitems: 10,
         data: false,
         connect_with: false,
         onselect: null,
@@ -863,12 +928,12 @@
         layer_selector: '',
         php_mode: true,
         class_names: $.FCBKCompleter.default_class_names
-    }
+    };
 
     //BM: for quoting etext
     if(typeof RegExp.quote == 'undefined') {
         RegExp.quote = function(s) {
-            return new String(s).replace( /([.?*+^$[\]\\(){}-])/g , "\\$1");
+            return (s+'').replace( /([.?*+^$[\]\\(){}-])/g , "\\$1");
         };
     }
 
