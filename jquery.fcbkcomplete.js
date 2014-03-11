@@ -54,7 +54,28 @@
 - 2.7.6 minor bug fixes
         added 'php_mode' option to append square brackets after the <select> tag's name attribute.
         added 'class_names' dictionnary to change the default CSS classes used by the plugin.
+- 2.7.6.BM.1 show stopper bug fixes
+        removed '/' key filter as it filters all other characters on the same key, and there is no reason to filter it.
+        correctly url encodes the user text before calling the 'suggest' webservice (specified in json_url). This fix bugs when typing reserved uri keywords (?, &, ...)
+        uses $.ajax instead of $.getJSON to fetch json_url, so if default http method is set to POST using $.ajaxSetup, the url is queried using POST not GET. This fix issues with IE caching and simplifies ASP.NET MVC 'suggest' webservice serverside code.
+        xssPrevent: chained statements.
+        replaced unsupported event.keyCode with correct event.which
+        added support for spaces in tags. Warning: ":" and "," and """ are used internally so filter them out. This is an existing limitation.
+        delay: if delay is set the suggest box now appears only after the items are fetched from the ajax service, thus correctly displaying only suggested/filtered tags.
+        LEFT/RIGHT in addition to UP/DOWN can be used to navigate through the items.
 
+- 2.7.6.BM.2 more show stopper bugs fixes, updated example with a nice theme
+        Resharper 6 Javascript realtime analyzer: fix missing ; duplicate var and inconsistent returns
+        Included jamesspencer patch to allow the use of non-(multi)select inputs
+        funCall can now return a value
+        changed the browser_msie test to $.support
+        options.filter_selected missing
+        included changed by zack: item_deleting class, adding hover support to list items, adding click selection support
+        fix LEFT/RIGHT navigation when no item is selected (will do normal cursor navigation inside text)
+        renamed event to e to prevent global "event" variable collision on ie
+        more regexp quoting
+        fix broken keep_prompt_after_choose when adding a tag by clicking on it
+        fix focus on input after a selection was not working as expected
 */
 /* Copyright: Guillermo Rauch <http://devthought.com/> - Distributed under MIT - Keep this message! */
 /*
@@ -92,11 +113,10 @@
  *                     + item_default (default value: bit-box): CSS class for the selected values.
  *                     + item_locked (default value: locked): CSS class for locked items.
  */
-(function ($) {
+;(function ($) {
 
     $.fn.extend({
         fcbkcomplete: function (options) {
-            moveToTop(this);
             options = $.extend({}, $.FCBKCompleter.defaults, options);
 
             // If a 'options.class_names' dictionary was passed, still use defaults
@@ -116,6 +136,8 @@
         var KEY = {
             UP: 38,
             DOWN: 40,
+            LEFT: 37,
+            RIGHT: 39,
             DEL: 46,
             TAB: 9,
             RETURN: 13,
@@ -138,22 +160,21 @@
         var search_string = '';
         var focuson = null;
         var deleting = 0;
-        var browser_msie = "\v" == "v";
+        var browser_msie = !$.support.boxModel; //"\v" == "v";
         var browser_msie_frame;
         var element = $(input);
         var elemid = element.attr("id") || 'fcbkselect_ '+ Math.floor(Math.random() * 100000);
         var li_annon = null;
         var input = null;
         var elm_selected = new Array();
-        var used_vals = (options.used_vals != undefined && $.isArray(options.used_vals)) ? options.used_vals : [];
-
-
+        var used_vals = (options && options.used_vals != undefined && $.isArray(options.used_vals)) ? options.used_vals : [];
         //=========== Setup plugin ============//
 
         createFCBK();
         preSet();
         fcbkPosition();
         addInput(false);
+        moveToTop(this);
         element.data('setSelected', function(val, disable) {
             var pos = $.inArray(val, elm_selected);
             if (disable && pos < 0) {
@@ -164,7 +185,7 @@
             }
         });
 
-        $(this).bind("addItem", function(event, data) {
+        $(this).bind("addItem", function(e, data) {
             if ($.isArray(data)) {
                 for (var i = 0 ; i<data.length; i++) {
                     addItem(data[i].title, data[i].value, 0, 0, 0);
@@ -203,7 +224,6 @@
             holder = $(document.createElement("ul"));
             holder.attr("class", options.class_names.holder);
             element.after(holder);
-
             complete = $(document.createElement("div"));
             complete.addClass(options.class_names.complete);
             if (options.complete_text) {
@@ -254,7 +274,7 @@
                         caption: option.text(),
                         value: option.val()
                     });
-                    search_string += "" + (cache.length - 1) + ":" + option.text() + ";";
+                    search_string += (cache.length - 1) + ":" + option.text() + ";";
                 });
             }
         }
@@ -287,87 +307,93 @@
                 });
             }
         }
-
-
         function addItem(title, value, preadded, locked, focusme) {
             if (!maxItems()) {
                 return false;
             }
+            var li = document.createElement("li");
+            var txt = document.createTextNode(title);
+            var aclose = document.createElement("a");
 
-            var li = $(document.createElement("li"));
-            var aclose = $(document.createElement("a"));
-            var liclass = "bit-box" + (locked ? " locked" : "");
-            var txt = $('<div style="float:left;">' + title+ '</div>')
-            li.attr({
-                "class": liclass,
-                "rel": value,
-                'style':'position:static'
-            });
-            holder.append(li);
-            li.prepend(txt);
-            li.append(aclose)
-            var parent_width = li.parent().width();
-            var li_width = li.width();
-            li_width = options.width?options.width:li_width;
-            if(parent_width > (li_width + 17) && !options.width){
-                li_width = li_width + 17;
-            }
-            li.width((li_width) + 'px');
+            $(li).attr({ 'class': options.class_names.item_default, 'rel': value });
+            $(li).prepend(txt);
 
-            txt.css({
-                'width':Math.abs(li_width -17) + 'px',
-                'overflow':'hidden',
-                'height':'auto',
-                'white-space':'normal'
-            });
+            $(li).hover(// changed by zack, adding hover support to list items
+                function() { //mouseover
+                    if (!$(this).hasClass("deleted")) {
+                        $(this).addClass("ui-state-hover");
+                    }
+                },
+                function() { //mouseout
+                    if (!$(this).hasClass("deleted")) {
+                        $(this).removeClass("ui-state-hover");
+                    }
+                }
+            );
 
-            var margin = Math.abs(Math.ceil((li.height() - 7)/2));
-            aclose.attr({
-                "class": "closebutton",
-                "href": "#",
-                'style':';width:7px;float:right;margin:' + margin + 'px 3px 0px 3px;'
-            });
-            aclose.click(function(){
-                removeItem($(this).parent("li"));
-                return false;
-            });
+            $(li).click(// changed by zack, adding click selection support
+                function(e) {
+                    e.stopPropagation();
+                    if ($(this).hasClass("deleted")) {
+                        // it's already selected, deselect it (and by it I mean everything)
+                        holder.children("li."+options.class_names.item_default+".deleted").removeClass("deleted ui-state-hover");
+                    } else {
+                        // otherwise, select it, but only after deselecting everything else first
+                        holder.children("li."+options.class_names.item_default+".deleted").removeClass("deleted ui-state-hover");
+                        $(this).addClass("deleted ui-state-hover");
+                    }
+                    $("#" + elemid + "_annoninput").children(".maininput").focus();
+                }
+            );
+            
+            $(aclose).attr({ 'class': options.class_names.closebutton, 'href': '#' });
 
             if (locked) {
                 $(li).addClass(options.class_names.item_locked);
             }
 
+            li.appendChild(aclose);
+            holder.append(li);
+
+            $(aclose).click(function() {
+                removeItem($(this).parent("li"));
+                return false;
+            });
+
             if (!preadded) {
+                li_annon.remove();
                 var _item;
                 addInput(focusme);
-                if (element.children("option[value=" + value + "]").length) {
-                    _item = element.children("option[value=" + value + "]");
+                if (element.children("option[value=\"" + value + "\"]").length) {
+                    _item = element.children("option[value=\"" + value + "\"]");
                     _item.get(0).setAttribute("selected", "selected");
                     if (!_item.hasClass("selected")) {
                         _item.addClass("selected");
                     }
                 }
                 else {
-                    var _item = $(document.createElement("option"));
+                    _item = $(document.createElement("option"));
                     _item.attr("value", value).get(0).setAttribute("selected", "selected");
                     _item.attr("value", value).addClass("selected");
                     _item.text(title);
-                    element.append(_item);
+                    element.is('select') && element.append(_item);
                 }
 
                 if (options.connect_with == 'Array' && $.inArray(value, used_vals) < 0) {
                     used_vals.push(value.toString());
                 }
                 else if (options.connect_with && options.connect_with != 'Array' ) {
-                    setSelecton(value.toString(), true)
+                    setSelecton(value.toString(), true);
                 }
                 if (typeof options.onselect == 'function') {
-                    funCall(options.onselect, _item)
+                    funCall(options.onselect, _item);
                 }
                 element.change();
             }
-            holder.children("li." + options.class_names.item_default + ".deleted").removeClass("deleted");
+            holder.children("li." + options.class_names.item_default + ".deleted").removeClass("deleted ui-state-hover");
             feed.hide();
-            browser_msie ? browser_msie_frame.hide() : '';
+            if(browser_msie) browser_msie_frame.hide();
+            return true;
         }
 
 
@@ -417,17 +443,18 @@
             holder.append(li_annon.append(input));
 
             var getBoxTimeout = 0;
+            //input.focus(function() { complete.fadeIn("fast"); }); //BM: removed to correctly honor 'delay'
+            input.blur(function() { if( getBoxTimeout != 0 ) {clearTimeout(getBoxTimeout);getBoxTimeout=0;} complete.fadeOut("fast"); });  //BM: correctly remove the running delay timer
 
-            input.focus(function() {
-                complete.fadeIn("fast");
-            });
-            input.blur(function() {
-                complete.fadeOut("fast");
-            });
-
+            // change from zack: clicking the input will now deselect any selected items
+            input.click(function(e) {
+                    if ($(e.target).is(this)) {
+                        holder.children("li."+options.class_names.item_default+".deleted").removeClass("deleted ui-state-hover");
+                    }
+                });
+            
             holder.click(function() {
                 fcbkPosition();
-                input.focus();
                 if (feed.length && (input.val().length || options.default_search.length)) {
                     if (options.default_search.length && !input.val().length) {
                         input.keyup();
@@ -436,95 +463,102 @@
                 }
                 else {
                     feed.hide();
-                    browser_msie ? browser_msie_frame.hide() : '';
+                    if(browser_msie) browser_msie_frame.hide();
+                    // change from zack: clicking anywhere in the holder will deselect any selected items
+                    holder.children("li."+options.class_names.item_default+".deleted").removeClass("deleted ui-state-hover");
                     complete.children(".default").show();
                 }
+                    
+                setTimeout(function() {input.focus();}, 0);
             });
 
-            input.keypress(function(event) {
-                if (event.keyCode == KEY.RETURN || event.keyCode == KEY.TAB) {
-                    return true;
-                }
+            input.keypress(function(e) {
+                if (e.which == KEY.RETURN || e.which == KEY.TAB)
+                    return;
                 //auto expand input
                 input.attr("size", input.val().length + 1);
             });
+            //BM: removed as the shift/control state of the key is not checked, so this disables all chars on the keyboard key.
+//            input.keydown(function(event) {
+//                //prevent to enter some bad chars when input is empty
+//                if (event.which == KEY.FORWARD_SLASH) {
+//                    event.preventDefault();
+//                    return false;
+//                }
+//            });
 
-            input.keydown(function(event) {
-                //prevent to enter some bad chars when input is empty
-                if (event.keyCode == KEY.FORWARD_SLASH) {
-                    event.preventDefault();
-                    return false;
-                }
-            });
-
-            input.keyup(function(event) {
+            input.keyup(function(e) {
                 var inp_val = input.val();
                 var etext = xssPrevent(inp_val == '' ? options.default_search : inp_val);
 
-                if (event.keyCode == KEY.BACKSPACE && etext == options.default_search) {
-                    feed.hide();
-                    browser_msie ? browser_msie_frame.hide() : '';
-                    if (!holder.children("li." + options.class_names.item_default + ":last").hasClass(options.class_names.item_locked)) {
-                        if (holder.children("li." + options.class_names.item_default + ".deleted").length == 0) {
-                            holder.children("li." + options.class_names.item_default + ":last").addClass("deleted");
-                            return false;
+                if (e.which == KEY.BACKSPACE && etext == options.default_search) {
+                    //feed.hide(); //BM: don't hide the "complete" box on delete
+                    //browser_msie ? browser_msie_frame.hide() : ''; //BM: don't hide the "complete" box on delete
+                    var tagSelector = "li." + options.class_names.item_default;
+                    if (!holder.children(tagSelector + ":last").hasClass(options.class_names.item_locked)) {
+                        if (holder.children(tagSelector + ".deleted").length == 0) {
+                            holder.children(tagSelector + ":last").addClass("deleted ui-state-hover");
+                            //return false; //BM: don't hide the "complete" box on delete
                         }
                         else {
                             if (deleting) {
-                                return;
+                                //return; //BM: don't hide the "complete" box on delete
                             }
                             deleting = 1;
-                            holder.children("li." + options.class_names.item_default + ".deleted").fadeOut("fast", function() {
+                            holder.children(tagSelector + ".deleted").addClass(options.class_names.item_deleting).removeClass(options.class_names.item_default).fadeOut("fast", function() {
                                 removeItem($(this));
-                                return false;
+                                //return false; //BM: don't hide the "complete" box on delete
                             });
+                            holder.children(tagSelector + ":last").addClass("deleted ui-state-hover");
                         }
                     }
                 }
+                if (e.which != KEY.DOWN && e.which != KEY.UP && e.which != KEY.LEFT && e.which != KEY.RIGHT) {
+                    if(etext.length != 0) {
+                        counter = 0;
 
-                if (event.keyCode != KEY.DOWN && event.keyCode != KEY.UP && etext.length != 0) {
-                    counter = 0;
-
-                    if (options.json_url) {
-                        if (options.cache && json_cache) {
-                            addMembers(etext);
-                            bindEvents();
+                        if (options.json_url) {
+                            if (options.cache && json_cache) {
+                                addMembers(etext);
+                                bindEvents();
+                                complete.fadeIn("fast"); //BM: we can now display the complete part
+                            }
+                            else {
+                                if( getBoxTimeout != 0 ) clearTimeout(getBoxTimeout); //BM: correctly remove the running delay timer
+                                getBoxTimeout = setTimeout (function() {
+                                    getBoxTimeout = 0;
+                                    $.ajax({url: options.json_url, dataType: 'json', data: { tag: etext }, //Automatic url encoding of etext by jQuery
+                                              success: function(result) {
+                                                  json_cache = true; //on next call the cached Json result will be used if options.cache is true.
+                                                  addMembers(etext, result);
+                                                  bindEvents();
+                                                  complete.fadeIn("fast"); //BM: we can now display the complete part
+                                              }});
+                                }, options.delay);
+                            }
                         }
                         else {
-                            getBoxTimeout++;
-                            var getBoxTimeoutValue = getBoxTimeout;
-                            setTimeout (function() {
-                                if (getBoxTimeoutValue != getBoxTimeout) return;
-                                $.getJSON(options.json_url + ( options.json_url.indexOf("?") > -1 ? "&" : "?" ) + "tag=" + etext, null,
-                                    function (data) {
-                                        addMembers(etext, data);
-                                        json_cache = true;
-                                        bindEvents();
+                            var data = undefined;
+                            if (options.preset_update) {
+                                data = new Array();
+                                element.children("option").each(function(i, option) {
+                                    option = $(option);
+                                    if (option.is(':selected') || option.is('.selected')) {
+                                        return;
+                                    }
+                                    data.push({
+                                        caption: option.text(),
+                                        value: option.val()
                                     });
-                            }, options.delay);
-                        }
-                    }
-                    else {
-                        var data = undefined
-                        if (options.preset_update) {
-                            data = new Array();
-                            element.children("option").each(function(i, option) {
-                                option = $(option);
-                                if (option.is(':selected') || option.is('.selected')) {
-                                    return undefined;
-                                }
-                                data.push({
-                                    caption: option.text(),
-                                    value: option.val()
                                 });
-                            });
+                            }
+                            addMembers(etext, data);
+                            bindEvents();
+                            complete.fadeIn("fast"); //BM: we can now display the complete part
                         }
                         addMembers(etext, data);
                         bindEvents();
                     }
-                    fcbkPosition();
-                    complete.children(".default").hide();
-                    feed.show();
                 }
             });
             if (focusme) {
@@ -556,7 +590,7 @@
                         caption: val.caption,
                         value: val.value
                     });
-                    search_string += "" + (cache.length - 1) + ":" + val.caption + ";";
+                    search_string += (cache.length - 1) + ":" + val.caption + ";";
                 });
             }
 
@@ -565,15 +599,15 @@
             if (options.filter_case) {
                 filter = "";
             }
-
-            var myregexp, match;
+            var myregexp, match=null;
             try {
-                myregexp = new RegExp('(?:^|;)\\s*(\\d+)\\s*:[^;]*?' + etext + '[^;]*', 'g' + filter);
+                myregexp = new RegExp('(?:^|;)\\s*(\\d+)\\s*:[^;]*?' + (etext===options.default_search ? etext : RegExp.quote(etext)) + '[^;]*', 'g' + filter); //BM: quoted etext
                 match = myregexp.exec(search_string);
             }
             catch (ex) {
             };
 
+            //Filter tags. Only kept tags are put into 'content'.
             var content = '';
             while (match != null && maximum > 0) {
                 var id = match[1];
@@ -583,9 +617,10 @@
                     op_selected = $.inArray(object.value.toString(), used_vals);
                 }
                 if (op_selected < 0) {
-                    var elm = element.children("option[value=" + object.value + "]");
+//BM: ugly code to fix
+                    var elm = element.children("option[value=\"" + (object.value+'').replace('\\','\\\\') + "\"]"); //BM: fix quotes & spaces
                     if (elm.length == 0) {
-                        elm = element.children(":contains('" + object.value + "')");
+                        elm = element.children(":contains('\"" + (object.value+'').replace('\\','\\\\') + "\"')"); //BM: fix quotes & spaces
                     }
                     op_selected = (elm.length > 0 && options.filter_selected && (elm.is(".selected") || elm.is(":selected")));
                 }
@@ -603,8 +638,8 @@
 
             feed.append(content);
             if (options.firstselected) {
-                focuson = feed.children("li:first");
-                focuson.addClass("auto-focus");
+                focuson = feed.children("li:visible:first"); //Added :visible
+                focuson.addClass("auto-focus ui-state-hover");
             }
 
             if (counter > options.height) {
@@ -662,16 +697,17 @@
 
 
         function itemIllumination(text, etext) {
+            text = ''+text;
             if (options.filter_case) {
                 try {
-                    var text = text.replace(new RegExp('(.*)("' + etext + '")(.*)', 'gi'), '$1<em>$2</em>$3');;
+                    text = text.replace(new RegExp('(.*)("' + RegExp.quote(etext) + '")(.*)', 'gi'), '$1<em>$2</em>$3');;
                 }
                 catch (ex) {
                 };
             }
             else {
                 try {
-                    var text = text.replace(new RegExp('(.*)("' + etext.toLowerCase() + '")(.*)', 'gi'), '$1<em>$2</em>$3');;
+                    text = text.replace(new RegExp('(.*)("' + RegExp.quote(etext.toLowerCase()) + '")(.*)', 'gi'), '$1<em>$2</em>$3');;
                 }
                 catch (ex) {
                 };
@@ -682,19 +718,19 @@
 
         function bindFeedEvent(){
             feed.children("li").mouseover(function() {
-                feed.children("li").removeClass("auto-focus");
-                $(this).addClass("auto-focus");
+                feed.children("li").removeClass("auto-focus ui-state-hover");
+                $(this).addClass("auto-focus ui-state-hover");
                 focuson = $(this);
             });
 
             feed.children("li").mouseout(function(){
-                $(this).removeClass("auto-focus");
+                $(this).removeClass("auto-focus ui-state-hover");
                 focuson = null;
             });
         }
 
-
-        function removeFeedEvent(){
+        function removeFeedEvent(e){
+            e.preventDefault();
             feed.children("li").unbind("mouseover");
             feed.children("li").unbind("mouseout");
             feed.mousemove(function() {
@@ -712,62 +748,66 @@
                 var option = $(this);
                 addItem(option.text(), option.attr("rel"));
                 feed.hide();
-                browser_msie ? browser_msie_frame.hide() : '';
+                if (browser_msie) browser_msie_frame.hide();
                 complete.hide();
+
+                if (options.keep_prompt_after_choose) {
+                    holder.trigger("click");
+                }
             });
 
             maininput.unbind("keydown");
-            maininput.keydown(function(event) {
-                if (event.keyCode == KEY.FORWARD_SLASH) {
-                    event.preventDefault();
-                    return false;
-                }
+            maininput.keydown(function(e) {
+//                if (e.which == KEY.FORWARD_SLASH) {
+//                    e.preventDefault();
+//                    return false;
+//                }
 
-                if (event.keyCode != KEY.BACKSPACE) {
-                    holder.children("li." + options.class_names.item_default + ".deleted").removeClass("deleted");
+                if (e.which != KEY.BACKSPACE) {
+                    holder.children("li." + options.class_names.item_default + ".deleted").removeClass("deleted ui-state-hover");
                 }
 
                 /* Triggers an "submit" event */
-                if ((event.keyCode == KEY.RETURN && options.choose_on_enter) ||
-                    (event.keyCode == KEY.TAB && options.choose_on_tab) ||
-                    (event.keyCode == KEY.COMMA && options.choose_on_comma)) {
+                if ((e.which == KEY.RETURN && options.choose_on_enter) ||
+                    (e.which == KEY.TAB && options.choose_on_tab) ||
+                    (e.which == KEY.COMMA && options.choose_on_comma)) { 
                     if (checkFocusOn()) {
                         var option = focuson;
                         addItem(option.text(), option.attr("rel"));
                         complete.hide();
-                        event.preventDefault();
+                        e.preventDefault();
                         focuson = null;
                         if (options.keep_prompt_after_choose) {
                             holder.trigger("click");
                         }
-                        return false;
+                        return;
                     } else {
                         if (options.newel) {
                             var value = xssPrevent($(this).val());
                             if (value) {
                                 addItem(value, value);
-                                event.preventDefault();
+                                e.preventDefault();
                                 input.focus();
                             } else {
                                 complete.hide();
                             }
                             focuson = null;
                         }
-                        if (options.keep_prompt_after_choose) {
+                        if (options.keep_prompt_after_choose) { 
                             holder.trigger("click");
                         }
-                        return false;
+                        return;
                     }
                 }
 
-                if (event.keyCode == KEY.DOWN) {
-                    removeFeedEvent();
+                if (e.which == KEY.DOWN || (e.which == KEY.RIGHT && (focuson != null && focuson.length != 0)) ) {
+                    removeFeedEvent(e);
                     if (focuson == null || focuson.length == 0) {
-                        focuson = feed.children("li:first");
+                        focuson = feed.children("li:visible:first");
                         feed.get(0).scrollTop = 0;
                     }
                     else {
-                        focuson.removeClass("auto-focus");
+                        focuson.removeClass("auto-focus ui-state-hover");
                         focuson = focuson.next();
                         var prev = parseInt(focuson.prevAll("li").length);
                         var next = parseInt(focuson.nextAll("li").length);
@@ -775,18 +815,18 @@
                             feed.get(0).scrollTop = parseInt(focuson.get(0).scrollHeight, 10) * (prev - Math.round(options.height / 2));
                         }
                     }
-                    feed.children("li").removeClass("auto-focus");
-                    focuson.addClass("auto-focus");
+                    feed.children("li").removeClass("auto-focus ui-state-hover");
+                    focuson.addClass("auto-focus ui-state-hover");
                 }
 
-                if (event.keyCode == KEY.UP) {
-                    removeFeedEvent();
+                if (e.which == KEY.UP || (e.which == KEY.LEFT && (focuson != null && focuson.length != 0)) ) {
+                    removeFeedEvent(e);
                     if (focuson == null || focuson.length == 0) {
                         focuson = feed.children("li:last");
                         feed.get(0).scrollTop = parseInt(focuson.get(0).scrollHeight) * (parseInt(feed.children("li").length) - Math.round(options.height / 2));
                     }
                     else {
-                        focuson.removeClass("auto-focus");
+                        focuson.removeClass("auto-focus ui-state-hover");
                         focuson = focuson.prev();
                         var prev = parseInt(focuson.prevAll("li").length);
                         var next = parseInt(focuson.nextAll("li").length);
@@ -794,8 +834,8 @@
                             feed.get(0).scrollTop = parseInt(focuson.get(0).scrollHeight) * (prev - Math.round(options.height / 2));
                         }
                     }
-                    feed.children("li").removeClass("auto-focus");
-                    focuson.addClass("auto-focus");
+                    feed.children("li").removeClass("auto-focus ui-state-hover");
+                    focuson.addClass("auto-focus ui-state-hover");
                 }
             });
         }
@@ -814,10 +854,7 @@
                     return;
                 }
                 var li = $(document.createElement("li"));
-                li.attr({
-                    'rel': value, 
-                    'fckb': '1'
-                }).html(value);
+                li.attr({ 'rel': value, 'fckb': '1' }).html(value);
                 feed.prepend(li);
                 counter++;
             }
@@ -831,7 +868,7 @@
                     _object['_' + item.get(0).attributes[i].nodeName] =  item.get(0).attributes[i].nodeValue;
                 }
             }
-            func.call(element[0], _object);
+            return func.call(element[0], _object);
         }
 
 
@@ -840,21 +877,20 @@
         }
 
 
-        function xssPrevent(string) {
-            string = string.replace(/[\"\'][\s]*javascript:(.*)[\"\']/g, "\"\"");
-            string = string.replace(/script(.*)/g, "");
-            string = string.replace(/eval\((.*)\)/g, "");
-            string = string.replace('/([\x00-\x08,\x0b-\x0c,\x0e-\x19])/', '');
-            return string;
+        function xssPrevent(s) {
+            return (s+'').replace(/[\"\'][\s]*javascript:(.*)[\"\']/g, "\"\"")
+                .replace(/script(.*)/g, "")
+                .replace(/eval\((.*)\)/g, "")
+                .replace('/([\x00-\x08,\x0b-\x0c,\x0e-\x19])/', '');
         }
-
-    }
+    };
 
     $.FCBKCompleter.default_class_names = {
         holder: 'holder',
         complete: 'facebook-auto',
         closebutton: 'closebutton',
         item_default: 'bit-box',
+        item_deleting: 'bit-box-deleting',
         item_locked: 'locked'
     };
 
@@ -865,12 +901,13 @@
         newel: false,
         firstselected: false,
         filter_case: false,
-        filter_hide: false,
+
+        filter_selected: false,
         complete_text: "Start to type...",
-        default_search:'.*?',
+        default_search: '.*?',
         maxshownitems: 30,
         preset_update: true,
-        maxitems:10,
+        maxitems: 10,
         data: false,
         connect_with: false,
         onselect: null,
@@ -887,5 +924,13 @@
         layer_selector: '',
         php_mode: true,
         class_names: $.FCBKCompleter.default_class_names
+    };
+
+    //BM: for quoting etext
+    if(typeof RegExp.quote == 'undefined') {
+        RegExp.quote = function(s) {
+            return (s+'').replace( /([.?*+^$[\]\\(){}-])/g , "\\$1");
+        };
     }
-})(jQuery)
+
+})(jQuery);
